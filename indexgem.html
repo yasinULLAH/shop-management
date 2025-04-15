@@ -383,7 +383,11 @@
             }
             h1 { font-size: 1.6em; }
             h2 { font-size: 1.3em; }
-            button { width: 100%; margin-bottom: 10px; margin-right: 0; }
+            /* Adjusted button width for mobile */
+            button { width: auto; margin-bottom: 10px; margin-right: 8px; }
+            .text-right button { width: auto; } /* Allow buttons in text-right to size naturally */
+            td:last-child button { width: auto; margin-left: 0; } /* Adjust table cell buttons */
+
             .form-row { flex-direction: column; gap: 0; }
             table, thead, tbody, th, td, tr {
                 display: block;
@@ -400,6 +404,10 @@
                 position: relative;
                 padding-left: 50%;
                 text-align: left;
+                /* Ensure buttons stack vertically in mobile table view */
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start; /* Align buttons left */
             }
             td:before {
                 position: absolute;
@@ -415,14 +423,22 @@
             #quote-items-table td:before { top: 12px; } /* Adjust label pos */
 
             /* Ensure buttons in table cells stack */
-             td:last-child button {
-                 display: block;
-                 width: calc(100% - 50%); /* Adjust width considering padding */
-                 margin-left: 50%;
+             td[data-label="Actions"] {
+                 padding-left: 6px; /* Remove extra padding for action buttons */
+             }
+             td[data-label="Actions"]:before {
+                 display: none; /* Hide the label for actions column */
+             }
+             td[data-label="Actions"] button {
+                 display: inline-block; /* Make buttons inline-block */
+                 width: auto; /* Allow natural width */
+                 margin-left: 0;
+                 margin-right: 5px; /* Space between buttons */
                  margin-bottom: 5px;
              }
-             td:last-child button:last-child {
+             td[data-label="Actions"] button:last-child {
                  margin-bottom: 0;
+                 margin-right: 0;
              }
         }
 
@@ -527,7 +543,7 @@
                     <tbody>
                         </tbody>
                 </table>
-                <div id="client-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div id="client-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000;">
                     <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px;">
                         <h2 id="client-modal-title">Add Client</h2>
                         <form id="client-form">
@@ -561,7 +577,7 @@
                         </form>
                     </div>
                 </div>
-                 <div id="client-detail-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                 <div id="client-detail-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000;">
                     <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto;">
                         <h2 id="client-detail-name">Client Details</h2>
                         <p><strong>Phone:</strong> <span id="client-detail-phone"></span></p>
@@ -615,7 +631,8 @@
                 <h1 id="quote-page-title">Create New Quote</h1>
                 <form id="quote-form">
                     <input type="hidden" id="quote-id">
-                    <input type="hidden" id="quote-number-hidden"> <div class="form-row">
+                    <input type="hidden" id="quote-number-hidden">
+                     <div class="form-row">
                         <div class="form-group">
                             <label for="quote-client">Client*</label>
                             <select id="quote-client" required>
@@ -1065,7 +1082,8 @@
                     });
                     // Reset forms when navigating away from quote page
                     if (pageId !== 'new-quote-page' && quoteForm && quoteForm.dataset.dirty === 'true') {
-                        resetQuoteForm();
+                        // Don't reset automatically, let cancel button handle confirmation
+                        // resetQuoteForm();
                     }
                     // Reset client modal if open
                     if (pageId !== 'clients-page' && clientModal && !clientModal.classList.contains('hidden')) {
@@ -1075,16 +1093,25 @@
                     if (pageId !== 'clients-page' && clientDetailModal && !clientDetailModal.classList.contains('hidden')) {
                         closeClientDetailModal();
                     }
-                     // Hide preview page if navigating away
-                    if (pageId !== 'quote-preview-page' && quotePreviewPage && !quotePreviewPage.classList.contains('hidden')) {
-                        closeQuotePreview();
-                    }
+                    // Hide preview page if navigating away from it (but not when navigating *to* new-quote-page from preview)
+                    // This check was part of the recursion, removed for now. Preview is closed explicitly by button.
+                    // if (pageId !== 'quote-preview-page' && pageId !== 'new-quote-page' && quotePreviewPage && !quotePreviewPage.classList.contains('hidden')) {
+                    //     closeQuotePreview();
+                    // }
                 };
 
                 sidebarLinks.forEach(link => {
                     link.addEventListener('click', (e) => {
                         e.preventDefault();
                         const pageId = link.dataset.page;
+                        // Check for unsaved changes before navigating away from quote form
+                        if (quoteForm && quoteForm.dataset.dirty === 'true' && !pages.find(p => p.id === 'new-quote-page')?.classList.contains('active')) {
+                             if (!confirm('You have unsaved changes on the quote form. Are you sure you want to navigate away and discard them?')) {
+                                 return; // Stop navigation
+                             }
+                             resetQuoteForm(); // Discard changes if confirmed
+                        }
+
                         setActivePage(pageId);
                         // Update URL hash for basic history/bookmarking
                         try { // Prevent errors if history API is restricted
@@ -1100,6 +1127,13 @@
                     const hash = window.location.hash || '#clients'; // Default to clients
                     const targetLink = document.querySelector(`.sidebar .nav-link[href="${hash}"]`);
                     if (targetLink && targetLink.dataset.page) {
+                        // Check for unsaved changes before navigating via hash change
+                        if (quoteForm && quoteForm.dataset.dirty === 'true' && !pages.find(p => p.id === 'new-quote-page')?.classList.contains('active')) {
+                             console.log("Hash change detected with dirty form - potential data loss. Consider adding confirmation.");
+                             // Ideally, prevent hash change or confirm, but that's more complex.
+                             // For now, we'll proceed but reset the form.
+                             resetQuoteForm();
+                        }
                         setActivePage(targetLink.dataset.page);
                     } else {
                         setActivePage('clients-page'); // Fallback
@@ -1729,9 +1763,27 @@
                     setActivePage('quote-preview-page');
                 };
 
+                // *** FIX START: Prevent recursion in closeQuotePreview ***
                 const closeQuotePreview = () => {
-                    setActivePage('new-quote-page'); // Go back to the quote form
+                    // Manually hide preview and show the quote form page
+                    if (quotePreviewPage) {
+                        quotePreviewPage.classList.remove('active');
+                        // Use 'hidden' class if your CSS relies on display:none/block
+                        // quotePreviewPage.classList.add('hidden');
+                    }
+                     if (quotePage) { // quotePage refers to 'new-quote-page' section
+                        quotePage.classList.add('active');
+                        // quotePage.classList.remove('hidden');
+                    }
+
+                    // Manually update sidebar link state to highlight 'New Quote'
+                    sidebarLinks.forEach(link => {
+                        link.classList.toggle('active', link.dataset.page === 'new-quote-page');
+                    });
+                     // Optionally update hash, but might not be needed if closed via button click
+                     // window.location.hash = '#new-quote';
                 };
+                // *** FIX END ***
 
                 const printQuote = () => {
                     window.print();
@@ -1988,7 +2040,7 @@
                 });
                 if (quoteForm) quoteForm.addEventListener('submit', saveQuote);
                 if (previewQuoteBtn) previewQuoteBtn.addEventListener('click', generateQuotePreview);
-                if (closePreviewBtn) closePreviewBtn.addEventListener('click', closeQuotePreview);
+                if (closePreviewBtn) closePreviewBtn.addEventListener('click', closeQuotePreview); // Uses updated closeQuotePreview
                 if (printQuoteBtn) printQuoteBtn.addEventListener('click', printQuote);
                 if (quoteAddClientBtn) quoteAddClientBtn.addEventListener('click', () => {
                     // Open client modal, maybe store current quote state? For now, just open it.
@@ -2061,6 +2113,10 @@
                      errorDiv.style.top = '10px';
                      errorDiv.style.left = '10px';
                      errorDiv.style.zIndex = '9999';
+                     // Remove previous error message if exists
+                     const existingError = body.querySelector('.init-error-msg');
+                     if (existingError) body.removeChild(existingError);
+                     errorDiv.className = 'init-error-msg'; // Add class for potential removal
                      body.prepend(errorDiv);
                  }
             }
