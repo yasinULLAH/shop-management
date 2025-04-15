@@ -1,0 +1,2460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Business Manager</title>
+  <style>
+    :root {
+      --primary: #3498db;
+      --primary-dark: #2980b9;
+      --secondary: #e74c3c;
+      --text: #333;
+      --light-text: #666;
+      --lighter-text: #999;
+      --bg: #f9f9f9;
+      --light-bg: #fff;
+      --border: #ddd;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .app-container {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 250px;
+      background: var(--light-bg);
+      border-right: 1px solid var(--border);
+      padding: 1rem 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .content {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 0 1rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      height: 60px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .default-logo {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .nav-menu {
+      margin-top: 1.5rem;
+      flex-grow: 1;
+    }
+
+    .nav-item {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      color: var(--light-text);
+      transition: all 0.2s;
+    }
+
+    .nav-item:hover {
+      background: rgba(0,0,0,0.05);
+    }
+
+    .nav-item.active {
+      background: rgba(52, 152, 219, 0.1);
+      color: var(--primary);
+      border-left: 4px solid var(--primary);
+    }
+
+    .nav-item i {
+      margin-right: 0.75rem;
+      width: 20px;
+      text-align: center;
+    }
+
+    .backup-controls {
+      padding: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    button {
+      cursor: pointer;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.6rem 1rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+    }
+
+    button.secondary {
+      background: #f1f1f1;
+      color: var(--text);
+    }
+
+    button.secondary:hover {
+      background: #e1e1e1;
+    }
+
+    button.full {
+      width: 100%;
+      margin-bottom: 0.5rem;
+    }
+
+    h1, h2, h3 {
+      margin-bottom: 1rem;
+      color: var(--text);
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 0.6rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .card-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin: 0;
+    }
+
+    .search-box {
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      width: 100%;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: #f1f1f1;
+      font-weight: 600;
+    }
+
+    tr:hover {
+      background: rgba(0,0,0,0.02);
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .action-btn {
+      background: none;
+      color: var(--light-text);
+      padding: 0.3rem;
+      border-radius: 4px;
+    }
+
+    .action-btn:hover {
+      background: #f1f1f1;
+    }
+
+    .edit {
+      color: var(--primary);
+    }
+
+    .delete {
+      color: var(--secondary);
+    }
+
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .modal.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 6px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .modal-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--light-text);
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.3rem;
+      font-weight: 500;
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    /* Quote Creator Styles */
+    .quote-form {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .business-details, .client-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    .quote-items {
+      margin: 1rem 0;
+    }
+
+    .quote-item {
+      display: grid;
+      grid-template-columns: 3fr 1fr 1fr 1fr auto;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .quote-item-header {
+      font-weight: bold;
+      padding: 0.5rem 0;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .remove-item {
+      background: none;
+      color: var(--secondary);
+      padding: 0.2rem 0.5rem;
+    }
+
+    .add-item {
+      margin: 1rem 0;
+      background: #f1f1f1;
+      color: var(--text);
+    }
+
+    .quote-totals {
+      margin-top: 1rem;
+      margin-left: auto;
+      width: 40%;
+    }
+
+    .quote-totals .row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .quote-totals .row.total {
+      font-weight: bold;
+      font-size: 1.1rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    /* Print styles for quotes */
+    @media print {
+      .sidebar, .no-print {
+        display: none;
+      }
+
+      .app-container {
+        display: block;
+        height: auto;
+      }
+
+      .content {
+        padding: 0;
+      }
+
+      body {
+        background: white;
+      }
+
+      .quote-print-view {
+        padding: 20px;
+      }
+
+      .card {
+        box-shadow: none;
+        border: none;
+      }
+    }
+
+    /* Mobile Styles */
+    @media (max-width: 768px) {
+      .app-container {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        padding: 0.5rem;
+      }
+
+      .sidebar-header {
+        width: 100%;
+        border-bottom: none;
+        padding: 0 0 0.5rem;
+      }
+
+      .nav-menu {
+        display: flex;
+        margin-top: 0.5rem;
+        width: 100%;
+        overflow-x: auto;
+      }
+
+      .backup-controls {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0 0;
+        border-top: none;
+      }
+
+      .backup-controls button {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+      }
+
+      .business-details, .client-details {
+        grid-template-columns: 1fr;
+      }
+
+      .quote-item {
+        grid-template-columns: 3fr 1fr 1fr auto;
+      }
+
+      .quote-item .amount {
+        display: none;
+      }
+
+      .quote-totals {
+        width: 100%;
+      }
+    }
+
+    /* Custom Select Styles */
+    .custom-select {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+
+    .select-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: white;
+      cursor: pointer;
+    }
+
+    .select-options {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 10;
+      display: none;
+    }
+
+    .select-options.active {
+      display: block;
+    }
+
+    .select-option {
+      padding: 0.6rem;
+      cursor: pointer;
+    }
+
+    .select-option:hover {
+      background: #f1f1f1;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: var(--light-text);
+    }
+
+    .empty-state i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.3;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #333;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      transition: transform 0.3s, opacity 0.3s;
+      transform: translateY(100px);
+      opacity: 0;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      background: #2ecc71;
+    }
+
+    .toast.error {
+      background: #e74c3c;
+    }
+
+    /* Status badges */
+    .status-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .status-draft {
+      background: #f1f1f1;
+      color: #666;
+    }
+
+    .status-sent {
+      background: #3498db30;
+      color: #3498db;
+    }
+
+    .status-accepted {
+      background: #2ecc7130;
+      color: #2ecc71;
+    }
+
+    .status-rejected {
+      background: #e74c3c30;
+      color: #e74c3c;
+    }
+
+    /* Toggle switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--primary);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+
+    /* Toggle option */
+    .toggle-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .toggle-label {
+      font-weight: 500;
+    }
+
+    /* Auto backup indicator */
+    .backup-indicator {
+      font-size: 0.8rem;
+      color: var(--lighter-text);
+      text-align: center;
+      margin-top: 0.5rem;
+    }
+    
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(0,0,0,0.1);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Icons (simplified FontAwesome-like) */
+    .icon {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      stroke-width: 0;
+      stroke: currentColor;
+      fill: currentColor;
+      vertical-align: -0.125em;
+    }
+
+    /* Logo upload */
+    .logo-upload {
+      margin-bottom: 1rem;
+    }
+
+    .logo-preview {
+      margin-top: 0.5rem;
+      width: 100%;
+      height: 60px;
+      border: 1px dashed var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    /* Quote preview */
+    .quote-preview {
+      background: white;
+      padding: 2rem;
+      border: 1px solid var(--border);
+      margin-top: 1rem;
+    }
+
+    .preview-actions {
+      margin-top: 1rem;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+
+    .preview-business {
+      text-align: right;
+    }
+
+    .preview-quote-number {
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .preview-date {
+      color: var(--light-text);
+    }
+
+    .preview-client {
+      margin-bottom: 2rem;
+    }
+
+    .preview-table {
+      width: 100%;
+      margin-bottom: 2rem;
+    }
+
+    .preview-table th {
+      background: #f8f8f8;
+    }
+
+    .preview-totals {
+      width: 40%;
+      margin-left: auto;
+    }
+
+    .preview-footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Logo file upload button */
+    .file-upload {
+      position: relative;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+
+    .file-upload input[type=file] {
+      position: absolute;
+      top: 0;
+      right: 0;
+      min-width: 100%;
+      min-height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container" id="app">
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div id="businessLogo" class="logo">
+          <div class="default-logo">Service Manager</div>
+        </div>
+      </div>
+      <div class="nav-menu">
+        <div class="nav-item" data-page="clients">
+          <i>👥</i> Clients
+        </div>
+        <div class="nav-item" data-page="quotes">
+          <i>🧾</i> Quotes
+        </div>
+        <div class="nav-item" data-page="new-quote">
+          <i>✏️</i> New Quote
+        </div>
+        <div class="nav-item" data-page="settings">
+          <i>⚙️</i> Settings
+        </div>
+      </div>
+      <div class="backup-controls">
+        <button id="exportData" class="secondary full">Export Data</button>
+        <button id="importData" class="secondary full">Import Data</button>
+        <div class="backup-indicator">Auto-backup: <span id="backupStatus">Active</span></div>
+      </div>
+    </div>
+    <div class="content" id="content">
+      <!-- Dynamic content will be loaded here -->
+    </div>
+  </div>
+
+  <!-- Modal template -->
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Modal Title</div>
+        <button class="close-modal" id="closeModal">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Modal content will be loaded here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Hidden file input for JSON import -->
+  <input type="file" id="importFileInput" style="display: none" accept=".json">
+
+  <script>
+    // Database management
+    class Database {
+      constructor() {
+        // Initialize the storage
+        this.clients = JSON.parse(localStorage.getItem('clients')) || [];
+        this.quotes = JSON.parse(localStorage.getItem('quotes')) || [];
+        this.settings = JSON.parse(localStorage.getItem('settings')) || {
+          businessName: 'Your Business',
+          businessAddress: '',
+          businessPhone: '',
+          businessEmail: '',
+          taxRate: 10,
+          quotePrefix: 'QT',
+          nextQuoteNumber: 1001,
+          logo: null,
+          autoBackup: true
+        };
+        
+        // Set up auto backup
+        this.setupAutoBackup();
+      }
+
+      setupAutoBackup() {
+        if (this.settings.autoBackup) {
+          this.autoBackupInterval = setInterval(() => {
+            this.backupToLocalStorage();
+            this.showToast('Auto-backup completed', 'success');
+          }, 5 * 60 * 1000); // Every 5 minutes
+        } else if (this.autoBackupInterval) {
+          clearInterval(this.autoBackupInterval);
+        }
+      }
+
+      // Save data to localStorage
+      backupToLocalStorage() {
+        localStorage.setItem('clients', JSON.stringify(this.clients));
+        localStorage.setItem('quotes', JSON.stringify(this.quotes));
+        localStorage.setItem('settings', JSON.stringify(this.settings));
+        localStorage.setItem('lastBackup', new Date().toISOString());
+      }
+
+      // Get clients with optional filtering
+      getClients(filter = '') {
+        if (!filter) return this.clients;
+        
+        const lowercaseFilter = filter.toLowerCase();
+        return this.clients.filter(client => 
+          client.name.toLowerCase().includes(lowercaseFilter) ||
+          client.email.toLowerCase().includes(lowercaseFilter) ||
+          client.phone.toLowerCase().includes(lowercaseFilter) ||
+          client.address.toLowerCase().includes(lowercaseFilter)
+        );
+      }
+
+      // Add or update a client
+      saveClient(client) {
+        if (client.id) {
+          // Update existing client
+          const index = this.clients.findIndex(c => c.id === client.id);
+          if (index !== -1) {
+            this.clients[index] = client;
+          }
+        } else {
+          // Add new client
+          client.id = Date.now().toString();
+          client.created = new Date().toISOString();
+          this.clients.push(client);
+        }
+        this.backupToLocalStorage();
+        return client;
+      }
+
+      // Delete a client
+      deleteClient(id) {
+        this.clients = this.clients.filter(client => client.id !== id);
+        this.backupToLocalStorage();
+      }
+
+      // Get a client by ID
+      getClient(id) {
+        return this.clients.find(client => client.id === id);
+      }
+
+      // Get quotes with optional filtering
+      getQuotes(filter = {}) {
+        let filtered = [...this.quotes];
+        
+        if (filter.clientId) {
+          filtered = filtered.filter(quote => quote.clientId === filter.clientId);
+        }
+        
+        if (filter.status) {
+          filtered = filtered.filter(quote => quote.status === filter.status);
+        }
+        
+        if (filter.search) {
+          const lowercaseSearch = filter.search.toLowerCase();
+          filtered = filtered.filter(quote => 
+            quote.quoteNumber.toLowerCase().includes(lowercaseSearch) ||
+            (this.getClient(quote.clientId)?.name || '').toLowerCase().includes(lowercaseSearch)
+          );
+        }
+        
+        // Sort by date, newest first
+        return filtered.sort((a, b) => new Date(b.created) - new Date(a.created));
+      }
+
+      // Add or update a quote
+      saveQuote(quote) {
+        if (quote.id) {
+          // Update existing quote
+          const index = this.quotes.findIndex(q => q.id === quote.id);
+          if (index !== -1) {
+            this.quotes[index] = quote;
+          }
+        } else {
+          // Add new quote
+          quote.id = Date.now().toString();
+          quote.created = new Date().toISOString();
+          quote.updated = new Date().toISOString();
+          
+          // Generate quote number
+          if (!quote.quoteNumber) {
+            quote.quoteNumber = `${this.settings.quotePrefix}${this.settings.nextQuoteNumber}`;
+            this.settings.nextQuoteNumber++;
+            localStorage.setItem('settings', JSON.stringify(this.settings));
+          }
+          
+          this.quotes.push(quote);
+        }
+        this.backupToLocalStorage();
+        return quote;
+      }
+
+      // Delete a quote
+      deleteQuote(id) {
+        this.quotes = this.quotes.filter(quote => quote.id !== id);
+        this.backupToLocalStorage();
+      }
+
+      // Get a quote by ID
+      getQuote(id) {
+        return this.quotes.find(quote => quote.id === id);
+      }
+
+      // Update settings
+      saveSettings(newSettings) {
+        this.settings = { ...this.settings, ...newSettings };
+        this.backupToLocalStorage();
+        
+        // Update auto backup if setting changed
+        if (newSettings.hasOwnProperty('autoBackup')) {
+          this.setupAutoBackup();
+        }
+        
+        return this.settings;
+      }
+
+      // Export all data as JSON
+      exportData() {
+        return {
+          clients: this.clients,
+          quotes: this.quotes,
+          settings: this.settings,
+          exportDate: new Date().toISOString(),
+          version: '1.0'
+        };
+      }
+
+      // Import data from JSON
+      importData(data) {
+        try {
+          if (data.clients) this.clients = data.clients;
+          if (data.quotes) this.quotes = data.quotes;
+          if (data.settings) this.settings = data.settings;
+          this.backupToLocalStorage();
+          this.setupAutoBackup();
+          return true;
+        } catch (error) {
+          console.error('Error importing data:', error);
+          return false;
+        }
+      }
+    }
+
+    // UI Manager
+    class UIManager {
+      constructor(db) {
+        this.db = db;
+        this.currentPage = 'clients';
+        this.setupEventListeners();
+        this.loadPage('clients');
+        this.updateBusinessLogo();
+      }
+
+      setupEventListeners() {
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+          item.addEventListener('click', () => {
+            this.loadPage(item.dataset.page);
+          });
+        });
+
+        // Modal close button
+        document.getElementById('closeModal').addEventListener('click', () => {
+          this.closeModal();
+        });
+
+        // Close modal when clicking outside content
+        document.getElementById('modal').addEventListener('click', (e) => {
+          if (e.target === document.getElementById('modal')) {
+            this.closeModal();
+          }
+        });
+
+        // Backup/Restore buttons
+        document.getElementById('exportData').addEventListener('click', () => {
+          this.exportData();
+        });
+
+        document.getElementById('importData').addEventListener('click', () => {
+          document.getElementById('importFileInput').click();
+        });
+
+        document.getElementById('importFileInput').addEventListener('change', (e) => {
+          this.importData(e.target.files[0]);
+        });
+      }
+
+      loadPage(page) {
+        const content = document.getElementById('content');
+        this.currentPage = page;
+        
+        // Update active nav
+        document.querySelectorAll('.nav-item').forEach(item => {
+          if (item.dataset.page === page) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        });
+        
+        // Load page content
+        switch(page) {
+          case 'clients':
+            this.loadClientsPage();
+            break;
+          case 'quotes':
+            this.loadQuotesPage();
+            break;
+          case 'new-quote':
+            this.loadQuoteForm();
+            break;
+          case 'settings':
+            this.loadSettingsPage();
+            break;
+          default:
+            content.innerHTML = '<h1>Page not found</h1>';
+        }
+      }
+
+      // CLIENTS PAGE
+      loadClientsPage() {
+        const clients = this.db.getClients();
+        const content = document.getElementById('content');
+        
+        let html = `
+          <h1>
+            Clients
+            <button id="addClientBtn">Add Client</button>
+          </h1>
+          <div class="card">
+            <div class="card-header">
+              <input type="text" class="search-box" id="clientSearch" placeholder="Search clients...">
+            </div>
+            <div id="clientsTable">
+              ${this.renderClientsTable(clients)}
+            </div>
+          </div>
+        `;
+        
+        content.innerHTML = html;
+        
+        // Set up event listeners
+        document.getElementById('addClientBtn').addEventListener('click', () => {
+          this.showClientForm();
+        });
+        
+        document.getElementById('clientSearch').addEventListener('input', (e) => {
+          const filteredClients = this.db.getClients(e.target.value);
+          document.getElementById('clientsTable').innerHTML = this.renderClientsTable(filteredClients);
+          this.setupClientTableEvents();
+        });
+        
+        this.setupClientTableEvents();
+      }
+      
+      renderClientsTable(clients) {
+        if (clients.length === 0) {
+          return `
+            <div class="empty-state">
+              <i>👥</i>
+              <p>No clients found</p>
+              <p>Add your first client to get started</p>
+            </div>
+          `;
+        }
+        
+        return `
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Actions</th>
+				</tr>
+            </thead>
+            <tbody>
+              ${clients.map(client => `
+                <tr data-id="${client.id}">
+                  <td>${client.name || ''}</td>
+                  <td>${client.phone || ''}</td>
+                  <td>${client.email || ''}</td>
+                  <td class="actions">
+                    <button class="action-btn edit-client" data-id="${client.id}">✏️</button>
+                    <button class="action-btn view-client" data-id="${client.id}">👁️</button>
+                    <button class="action-btn delete-client" data-id="${client.id}">🗑️</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      }
+      
+      setupClientTableEvents() {
+        // Edit client buttons
+        document.querySelectorAll('.edit-client').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const clientId = btn.dataset.id;
+            const client = this.db.getClient(clientId);
+            this.showClientForm(client);
+          });
+        });
+        
+        // View client buttons
+        document.querySelectorAll('.view-client').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const clientId = btn.dataset.id;
+            this.showClientDetails(clientId);
+          });
+        });
+        
+        // Delete client buttons
+        document.querySelectorAll('.delete-client').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const clientId = btn.dataset.id;
+            if (confirm('Are you sure you want to delete this client?')) {
+              this.db.deleteClient(clientId);
+              this.loadClientsPage();
+              this.showToast('Client deleted successfully', 'success');
+            }
+          });
+        });
+      }
+      
+      showClientForm(client = null) {
+        const isEdit = client !== null;
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        
+        modalTitle.textContent = isEdit ? 'Edit Client' : 'Add New Client';
+        
+        modalBody.innerHTML = `
+          <form id="clientForm">
+            ${isEdit ? `<input type="hidden" name="id" value="${client.id}">` : ''}
+            <div class="form-group">
+              <label for="name">Name</label>
+              <input type="text" id="name" name="name" value="${isEdit ? client.name : ''}" required>
+            </div>
+            <div class="form-group">
+              <label for="phone">Phone</label>
+              <input type="tel" id="phone" name="phone" value="${isEdit ? client.phone : ''}">
+            </div>
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" value="${isEdit ? client.email : ''}">
+            </div>
+            <div class="form-group">
+              <label for="address">Address</label>
+              <textarea id="address" name="address" rows="3">${isEdit ? client.address : ''}</textarea>
+            </div>
+            <div class="form-group">
+              <label for="notes">Notes</label>
+              <textarea id="notes" name="notes" rows="3">${isEdit ? client.notes : ''}</textarea>
+            </div>
+            <div class="form-actions">
+              <button type="button" id="cancelClientForm" class="secondary">Cancel</button>
+              <button type="submit">Save Client</button>
+            </div>
+          </form>
+        `;
+        
+        this.openModal();
+        
+        // Setup form submission
+        document.getElementById('clientForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          
+          const formData = new FormData(e.target);
+          const clientData = {
+            id: formData.get('id') || null,
+            name: formData.get('name'),
+            phone: formData.get('phone'),
+            email: formData.get('email'),
+            address: formData.get('address'),
+            notes: formData.get('notes')
+          };
+          
+          this.db.saveClient(clientData);
+          this.closeModal();
+          this.loadClientsPage();
+          this.showToast(`Client ${isEdit ? 'updated' : 'added'} successfully`, 'success');
+        });
+        
+        document.getElementById('cancelClientForm').addEventListener('click', () => {
+          this.closeModal();
+        });
+      }
+      
+      showClientDetails(clientId) {
+        const client = this.db.getClient(clientId);
+        const quotes = this.db.getQuotes({ clientId });
+        
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        
+        modalTitle.textContent = client.name;
+        
+        modalBody.innerHTML = `
+          <div class="client-details">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Contact Information</h3>
+                <button class="edit-client-btn" data-id="${client.id}">Edit</button>
+              </div>
+              <div>
+                ${client.phone ? `<p><strong>Phone:</strong> ${client.phone}</p>` : ''}
+                ${client.email ? `<p><strong>Email:</strong> ${client.email}</p>` : ''}
+                ${client.address ? `<p><strong>Address:</strong> ${client.address}</p>` : ''}
+                ${client.notes ? `<p><strong>Notes:</strong> ${client.notes}</p>` : ''}
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Service History</h3>
+                <button id="newQuoteForClient">New Quote</button>
+              </div>
+              
+              ${quotes.length > 0 ? `
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Quote #</th>
+                      <th>Date</th>
+                      <th>Amount</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${quotes.map(quote => `
+                      <tr>
+                        <td>${quote.quoteNumber}</td>
+                        <td>${new Date(quote.created).toLocaleDateString()}</td>
+                        <td>$${this.calculateQuoteTotal(quote).toFixed(2)}</td>
+                        <td><span class="status-badge status-${quote.status.toLowerCase()}">${quote.status}</span></td>
+                        <td class="actions">
+                          <button class="action-btn view-quote" data-id="${quote.id}">👁️</button>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              ` : `
+                <div class="empty-state">
+                  <p>No quotes found for this client</p>
+                </div>
+              `}
+            </div>
+          </div>
+        `;
+        
+        this.openModal();
+        
+        // Setup event listeners
+        document.querySelector('.edit-client-btn').addEventListener('click', () => {
+          this.closeModal();
+          this.showClientForm(client);
+        });
+        
+        document.getElementById('newQuoteForClient').addEventListener('click', () => {
+          this.closeModal();
+          this.loadQuoteForm(null, client.id);
+        });
+        
+        document.querySelectorAll('.view-quote').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const quoteId = btn.dataset.id;
+            this.closeModal();
+            this.viewQuote(quoteId);
+          });
+        });
+      }
+      
+      // QUOTES PAGE
+      loadQuotesPage() {
+        const quotes = this.db.getQuotes();
+        const content = document.getElementById('content');
+        
+        let html = `
+          <h1>
+            Quotes & Estimates
+            <button id="newQuoteBtn">New Quote</button>
+          </h1>
+          <div class="card">
+            <div class="card-header">
+              <input type="text" class="search-box" id="quoteSearch" placeholder="Search quotes...">
+            </div>
+            <div id="quotesTable">
+              ${this.renderQuotesTable(quotes)}
+            </div>
+          </div>
+        `;
+        
+        content.innerHTML = html;
+        
+        // Set up event listeners
+        document.getElementById('newQuoteBtn').addEventListener('click', () => {
+          this.loadPage('new-quote');
+        });
+        
+        document.getElementById('quoteSearch').addEventListener('input', (e) => {
+          const filteredQuotes = this.db.getQuotes({ search: e.target.value });
+          document.getElementById('quotesTable').innerHTML = this.renderQuotesTable(filteredQuotes);
+          this.setupQuotesTableEvents();
+        });
+        
+        this.setupQuotesTableEvents();
+      }
+      
+      renderQuotesTable(quotes) {
+        if (quotes.length === 0) {
+          return `
+            <div class="empty-state">
+              <i>🧾</i>
+              <p>No quotes found</p>
+              <p>Create your first quote to get started</p>
+            </div>
+          `;
+        }
+        
+        return `
+          <table>
+            <thead>
+              <tr>
+                <th>Quote #</th>
+                <th>Date</th>
+                <th>Client</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${quotes.map(quote => {
+                const client = this.db.getClient(quote.clientId);
+                return `
+                  <tr data-id="${quote.id}">
+                    <td>${quote.quoteNumber}</td>
+                    <td>${new Date(quote.created).toLocaleDateString()}</td>
+                    <td>${client ? client.name : 'Unknown Client'}</td>
+                    <td>$${this.calculateQuoteTotal(quote).toFixed(2)}</td>
+                    <td><span class="status-badge status-${quote.status.toLowerCase()}">${quote.status}</span></td>
+                    <td class="actions">
+                      <button class="action-btn view-quote" data-id="${quote.id}">👁️</button>
+                      <button class="action-btn edit-quote" data-id="${quote.id}">✏️</button>
+                      <button class="action-btn duplicate-quote" data-id="${quote.id}">📋</button>
+                      <button class="action-btn delete-quote" data-id="${quote.id}">🗑️</button>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        `;
+      }
+      
+      setupQuotesTableEvents() {
+        // View quote
+        document.querySelectorAll('.view-quote').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const quoteId = btn.dataset.id;
+            this.viewQuote(quoteId);
+          });
+        });
+        
+        // Edit quote
+        document.querySelectorAll('.edit-quote').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const quoteId = btn.dataset.id;
+            this.loadQuoteForm(quoteId);
+          });
+        });
+        
+        // Duplicate quote
+        document.querySelectorAll('.duplicate-quote').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const quoteId = btn.dataset.id;
+            const quote = this.db.getQuote(quoteId);
+            
+            // Create a duplicate without ID and quote number
+            const duplicateQuote = {
+              ...quote,
+              id: null,
+              quoteNumber: null,
+              status: 'Draft',
+              created: null
+            };
+            
+            this.loadQuoteForm(null, null, duplicateQuote);
+          });
+        });
+        
+        // Delete quote
+        document.querySelectorAll('.delete-quote').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const quoteId = btn.dataset.id;
+            if (confirm('Are you sure you want to delete this quote?')) {
+              this.db.deleteQuote(quoteId);
+              this.loadQuotesPage();
+              this.showToast('Quote deleted successfully', 'success');
+            }
+          });
+        });
+      }
+      
+      // NEW QUOTE / EDIT QUOTE
+      loadQuoteForm(quoteId = null, clientId = null, duplicateQuote = null) {
+        const content = document.getElementById('content');
+        let quote = null;
+        let client = null;
+        
+        if (quoteId) {
+          quote = this.db.getQuote(quoteId);
+          client = quote ? this.db.getClient(quote.clientId) : null;
+        } else if (duplicateQuote) {
+          quote = duplicateQuote;
+          client = quote ? this.db.getClient(quote.clientId) : null;
+        } else if (clientId) {
+          client = this.db.getClient(clientId);
+        }
+        
+        const isEdit = quoteId !== null;
+        const isDuplicate = duplicateQuote !== null;
+        
+        // Set default quote if new
+        if (!quote) {
+          const today = new Date().toISOString().split('T')[0];
+          quote = {
+            items: [{ description: '', quantity: 1, unitPrice: 0 }],
+            subtotal: 0,
+            taxRate: this.db.settings.taxRate,
+            taxAmount: 0,
+            total: 0,
+            clientId: client ? client.id : '',
+            status: 'Draft',
+            date: today,
+            notes: '',
+            terms: 'Payment due within 30 days of receipt.'
+          };
+        }
+        
+        let html = `
+          <h1>
+            ${isEdit ? 'Edit Quote' : isDuplicate ? 'Duplicate Quote' : 'New Quote'}
+            <button id="previewQuoteBtn">Preview</button>
+          </h1>
+          
+          <form id="quoteForm" class="quote-form">
+            ${isEdit ? `<input type="hidden" name="id" value="${quote.id}">` : ''}
+            ${isEdit ? `<input type="hidden" name="quoteNumber" value="${quote.quoteNumber}">` : ''}
+            
+            <div class="card">
+              <h3>Client Information</h3>
+              <div class="client-details">
+                <div class="form-group">
+                  <label for="clientSelect">Select Client</label>
+                  <div class="custom-select">
+                    <div class="select-header" id="clientSelectHeader">
+                      ${client ? client.name : 'Select a client...'}
+                    </div>
+                    <div class="select-options" id="clientSelectOptions">
+                      <input type="text" id="clientSearchInput" placeholder="Search clients...">
+                      <div id="clientOptions">
+                        ${this.db.getClients().map(c => `
+                          <div class="select-option" data-id="${c.id}">${c.name}</div>
+                        `).join('')}
+                        <div class="select-option add-new-client" data-id="new">+ Add New Client</div>
+                      </div>
+                    </div>
+                  </div>
+                  <input type="hidden" id="clientId" name="clientId" value="${client ? client.id : ''}">
+                </div>
+                
+                <div class="form-group">
+                  <label for="status">Status</label>
+                  <select id="status" name="status">
+                    <option value="Draft" ${quote.status === 'Draft' ? 'selected' : ''}>Draft</option>
+                    <option value="Sent" ${quote.status === 'Sent' ? 'selected' : ''}>Sent</option>
+                    <option value="Accepted" ${quote.status === 'Accepted' ? 'selected' : ''}>Accepted</option>
+                    <option value="Rejected" ${quote.status === 'Rejected' ? 'selected' : ''}>Rejected</option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label for="date">Date</label>
+                  <input type="date" id="date" name="date" value="${quote.date || new Date().toISOString().split('T')[0]}">
+                </div>
+                
+                <div class="form-group full-width">
+                  <div id="selectedClientDetails">
+                    ${client ? `
+                      <div class="card">
+                        <p><strong>Phone:</strong> ${client.phone || 'N/A'}</p>
+                        <p><strong>Email:</strong> ${client.email || 'N/A'}</p>
+                        <p><strong>Address:</strong> ${client.address || 'N/A'}</p>
+                      </div>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="card">
+              <h3>Quote Items</h3>
+              <div class="quote-items">
+                <div class="quote-item quote-item-header">
+                  <div>Description</div>
+                  <div>Quantity</div>
+                  <div>Unit Price</div>
+                  <div>Amount</div>
+                  <div></div>
+                </div>
+                <div id="quoteItemsList">
+                  ${(quote.items || []).map((item, index) => this.renderQuoteItemRow(item, index)).join('')}
+                </div>
+              </div>
+              <button type="button" id="addItemBtn" class="add-item">Add Item</button>
+              
+              <div class="quote-totals">
+                <div class="row">
+                  <div>Subtotal</div>
+                  <div id="subtotalDisplay">$0.00</div>
+                </div>
+                <div class="row">
+                  <div>
+                    Tax
+                    <input type="number" id="taxRate" name="taxRate" min="0" max="100" step="0.01" value="${quote.taxRate || this.db.settings.taxRate}" style="width: 60px; margin: 0 5px;">
+                    %
+                  </div>
+                  <div id="taxDisplay">$0.00</div>
+                </div>
+                <div class="row total">
+                  <div>Total</div>
+                  <div id="totalDisplay">$0.00</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="card">
+              <h3>Additional Information</h3>
+              <div class="form-group">
+                <label for="notes">Notes</label>
+                <textarea id="notes" name="notes" rows="3">${quote.notes || ''}</textarea>
+              </div>
+              <div class="form-group">
+                <label for="terms">Terms & Conditions</label>
+                <textarea id="terms" name="terms" rows="3">${quote.terms || 'Payment due within 30 days of receipt.'}</textarea>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" id="cancelQuoteBtn" class="secondary">Cancel</button>
+              <button type="submit">Save Quote</button>
+            </div>
+          </form>
+        `;
+        
+        content.innerHTML = html;
+        
+        // Setup client select dropdown
+        this.setupClientSelect(client);
+        
+        // Setup quote items and calculations
+        this.setupQuoteItemsEvents();
+        this.updateQuoteTotals();
+        
+        // Form submission
+        document.getElementById('quoteForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          
+          // Validate
+          const clientId = document.getElementById('clientId').value;
+          if (!clientId) {
+            this.showToast('Please select a client', 'error');
+            return;
+          }
+          
+          // Get form data
+          const formData = new FormData(e.target);
+          
+          // Get items
+          const items = [];
+          const itemRows = document.querySelectorAll('.quote-item-row');
+          itemRows.forEach(row => {
+            const description = row.querySelector('[name="itemDescription[]"]').value;
+            const quantity = parseFloat(row.querySelector('[name="itemQuantity[]"]').value);
+            const unitPrice = parseFloat(row.querySelector('[name="itemUnitPrice[]"]').value);
+            
+            if (description) {
+              items.push({
+                description,
+                quantity: isNaN(quantity) ? 1 : quantity,
+                unitPrice: isNaN(unitPrice) ? 0 : unitPrice
+              });
+            }
+          });
+          
+          if (items.length === 0) {
+            this.showToast('Please add at least one item', 'error');
+            return;
+          }
+          
+          // Calculate totals
+          const subtotal = this.calculateSubtotal(items);
+          const taxRate = parseFloat(formData.get('taxRate'));
+          const taxAmount = subtotal * (taxRate / 100);
+          const total = subtotal + taxAmount;
+          
+          // Create quote object
+          const quoteData = {
+            id: formData.get('id') || null,
+            quoteNumber: formData.get('quoteNumber') || null,
+            clientId: clientId,
+            status: formData.get('status'),
+            date: formData.get('date'),
+            items: items,
+            subtotal: subtotal,
+            taxRate: taxRate,
+            taxAmount: taxAmount,
+            total: total,
+            notes: formData.get('notes'),
+            terms: formData.get('terms')
+          };
+          
+          // Save quote
+          const savedQuote = this.db.saveQuote(quoteData);
+          
+          // Show success and redirect
+          this.showToast(`Quote ${isEdit ? 'updated' : 'created'} successfully`, 'success');
+          this.viewQuote(savedQuote.id);
+        });
+        
+        // Preview button
+        document.getElementById('previewQuoteBtn').addEventListener('click', (e) => {
+          e.preventDefault();
+          this.previewQuote();
+        });
+        
+        // Cancel button
+        document.getElementById('cancelQuoteBtn').addEventListener('click', () => {
+          this.loadPage('quotes');
+        });
+      }
+      
+      renderQuoteItemRow(item = {}, index = 0) {
+        const description = item.description || '';
+        const quantity = item.quantity || 1;
+        const unitPrice = item.unitPrice || 0;
+        const amount = quantity * unitPrice;
+        
+        return `
+          <div class="quote-item quote-item-row" data-index="${index}">
+            <div>
+              <input type="text" name="itemDescription[]" placeholder="Description" value="${description}">
+            </div>
+            <div>
+              <input type="number" name="itemQuantity[]" min="1" step="1" placeholder="1" value="${quantity}" class="item-quantity">
+            </div>
+            <div>
+              <input type="number" name="itemUnitPrice[]" min="0" step="0.01" placeholder="0.00" value="${unitPrice}" class="item-price">
+            </div>
+            <div class="amount">$${amount.toFixed(2)}</div>
+            <div>
+              <button type="button" class="remove-item">×</button>
+            </div>
+          </div>
+        `;
+      }
+      
+      setupQuoteItemsEvents() {
+        // Add item button
+        document.getElementById('addItemBtn').addEventListener('click', () => {
+          const newIndex = document.querySelectorAll('.quote-item-row').length;
+          const newRow = this.renderQuoteItemRow({}, newIndex);
+          
+          const container = document.getElementById('quoteItemsList');
+          container.insertAdjacentHTML('beforeend', newRow);
+          
+          this.setupQuoteItemListeners(container.lastElementChild);
+          this.updateQuoteTotals();
+        });
+        
+        // Setup existing rows
+        document.querySelectorAll('.quote-item-row').forEach(row => {
+          this.setupQuoteItemListeners(row);
+        });
+        
+        // Tax rate change
+        document.getElementById('taxRate').addEventListener('input', () => {
+          this.updateQuoteTotals();
+        });
+      }
+      
+      setupQuoteItemListeners(row) {
+        // Remove item button
+        row.querySelector('.remove-item').addEventListener('click', () => {
+          row.remove();
+          this.updateQuoteTotals();
+        });
+        
+        // Update on quantity/price change
+        row.querySelectorAll('.item-quantity, .item-price').forEach(input => {
+          input.addEventListener('input', () => {
+            const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
+            const unitPrice = parseFloat(row.querySelector('.item-price').value) || 0;
+            const amount = quantity * unitPrice;
+            
+            row.querySelector('.amount').textContent = `$${amount.toFixed(2)}`;
+            this.updateQuoteTotals();
+          });
+        });
+      }
+      
+      updateQuoteTotals() {
+        const items = [];
+        document.querySelectorAll('.quote-item-row').forEach(row => {
+          const description = row.querySelector('[name="itemDescription[]"]').value;
+          const quantity = parseFloat(row.querySelector('[name="itemQuantity[]"]').value);
+          const unitPrice = parseFloat(row.querySelector('[name="itemUnitPrice[]"]').value);
+          
+          items.push({
+            description,
+            quantity: isNaN(quantity) ? 1 : quantity,
+            unitPrice: isNaN(unitPrice) ? 0 : unitPrice
+          });
+        });
+        
+        const subtotal = this.calculateSubtotal(items);
+        const taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+        const taxAmount = subtotal * (taxRate / 100);
+        const total = subtotal + taxAmount;
+        
+        document.getElementById('subtotalDisplay').textContent = `$${subtotal.toFixed(2)}`;
+        document.getElementById('taxDisplay').textContent = `$${taxAmount.toFixed(2)}`;
+        document.getElementById('totalDisplay').textContent = `$${total.toFixed(2)}`;
+      }
+      
+      calculateSubtotal(items) {
+        return items.reduce((sum, item) => {
+          const lineTotal = (item.quantity || 1) * (item.unitPrice || 0);
+          return sum + lineTotal;
+        }, 0);
+      }
+      
+      setupClientSelect(selectedClient = null) {
+        const header = document.getElementById('clientSelectHeader');
+        const options = document.getElementById('clientSelectOptions');
+        const clientIdInput = document.getElementById('clientId');
+        const clientDetails = document.getElementById('selectedClientDetails');
+        
+        // Toggle dropdown
+        header.addEventListener('click', () => {
+          options.classList.toggle('active');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest('#clientSelectHeader') && !e.target.closest('#clientSelectOptions')) {
+            options.classList.remove('active');
+          }
+        });
+        
+        // Search clients
+        const searchInput = document.getElementById('clientSearchInput');
+        searchInput.addEventListener('input', (e) => {
+          const search = e.target.value.toLowerCase();
+          const clientOptions = document.querySelectorAll('.select-option:not(.add-new-client)');
+          
+          clientOptions.forEach(option => {
+            const name = option.textContent.toLowerCase();
+            if (name.includes(search)) {
+              option.style.display = '';
+            } else {
+              option.style.display = 'none';
+            }
+          });
+        });
+        
+        // Select client
+        document.querySelectorAll('.select-option').forEach(option => {
+          option.addEventListener('click', () => {
+            const clientId = option.dataset.id;
+            
+            if (clientId === 'new') {
+              // Add new client
+              this.showClientForm(null, (newClient) => {
+                // After adding client, select it
+                clientIdInput.value = newClient.id;
+                header.textContent = newClient.name;
+                options.classList.remove('active');
+                
+                // Add new client to options
+                const newOption = document.createElement('div');
+                newOption.className = 'select-option';
+                newOption.dataset.id = newClient.id;
+                newOption.textContent = newClient.name;
+                
+                const clientOptions = document.getElementById('clientOptions');
+                clientOptions.insertBefore(newOption, document.querySelector('.add-new-client'));
+                
+                // Setup client option click
+                newOption.addEventListener('click', () => {
+                  clientIdInput.value = newClient.id;
+                  header.textContent = newClient.name;
+                  options.classList.remove('active');
+                  this.updateClientDetails(newClient);
+                });
+                
+                this.updateClientDetails(newClient);
+              });
+            } else {
+              // Select existing client
+              const client = this.db.getClient(clientId);
+              clientIdInput.value = clientId;
+              header.textContent = client.name;
+              options.classList.remove('active');
+              this.updateClientDetails(client);
+            }
+          });
+        });
+        
+        // Initialize with selected client if provided
+        if (selectedClient) {
+          clientIdInput.value = selectedClient.id;
+          header.textContent = selectedClient.name;
+          this.updateClientDetails(selectedClient);
+        }
+      }
+      
+      updateClientDetails(client) {
+        const container = document.getElementById('selectedClientDetails');
+        
+        container.innerHTML = `
+          <div class="card">
+            <p><strong>Phone:</strong> ${client.phone || 'N/A'}</p>
+            <p><strong>Email:</strong> ${client.email || 'N/A'}</p>
+            <p><strong>Address:</strong> ${client.address || 'N/A'}</p>
+          </div>
+        `;
+      }
+      
+      previewQuote() {
+        // Get form data
+        const clientId = document.getElementById('clientId').value;
+        if (!clientId) {
+          this.showToast('Please select a client first', 'error');
+          return;
+        }
+        
+        const client = this.db.getClient(clientId);
+        if (!client) {
+          this.showToast('Invalid client selected', 'error');
+          return;
+        }
+        
+        // Get items
+        const items = [];
+        const itemRows = document.querySelectorAll('.quote-item-row');
+        itemRows.forEach(row => {
+          const description = row.querySelector('[name="itemDescription[]"]').value;
+          const quantity = parseFloat(row.querySelector('[name="itemQuantity[]"]').value);
+          const unitPrice = parseFloat(row.querySelector('[name="itemUnitPrice[]"]').value);
+          
+          if (description) {
+            items.push({
+              description,
+              quantity: isNaN(quantity) ? 1 : quantity,
+              unitPrice: isNaN(unitPrice) ? 0 : unitPrice
+            });
+          }
+        });
+        
+        if (items.length === 0) {
+          this.showToast('Please add at least one item', 'error');
+          return;
+        }
+        
+        // Calculate totals
+        const subtotal = this.calculateSubtotal(items);
+        const taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+        const taxAmount = subtotal * (taxRate / 100);
+        const total = subtotal + taxAmount;
+        
+        // Get other quote data
+        const date = document.getElementById('date').value;
+        const notes = document.getElementById('notes').value;
+        const terms = document.getElementById('terms').value;
+        const quoteNumber = document.querySelector('input[name="quoteNumber"]')?.value || 
+                          `${this.db.settings.quotePrefix}${this.db.settings.nextQuoteNumber}`;
+        
+        // Create preview
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        
+        modalTitle.textContent = 'Quote Preview';
+        
+        modalBody.innerHTML = `
+          <div class="quote-preview">
+            <div class="preview-header">
+              <div>
+                <div class="preview-quote-number">Quote #${quoteNumber}</div>
+                <div class="preview-date">Date: ${new Date(date).toLocaleDateString()}</div>
+              </div>
+              <div class="preview-business">
+                <div><strong>${this.db.settings.businessName}</strong></div>
+                <div>${this.db.settings.businessAddress}</div>
+                <div>${this.db.settings.businessPhone}</div>
+                <div>${this.db.settings.businessEmail}</div>
+              </div>
+            </div>
+            
+            <div class="preview-client">
+              <div><strong>Client:</strong></div>
+              <div><strong>${client.name}</strong></div>
+              <div>${client.address}</div>
+              <div>${client.phone}</div>
+              <div>${client.email}</div>
+            </div>
+            
+            <table class="preview-table">
+              <thead>
+                <tr>
+                  <th style="width: 50%">Description</th>
+                  <th>Quantity</th>
+                  <th>Unit Price</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${items.map(item => `
+                  <tr>
+                    <td>${item.description}</td>
+                    <td>${item.quantity}</td>
+                    <td>$${item.unitPrice.toFixed(2)}</td>
+                    <td>$${(item.quantity * item.unitPrice).toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            
+            <div class="preview-totals">
+              <div class="row">
+                <div>Subtotal</div>
+                <div>$${subtotal.toFixed(2)}</div>
+              </div>
+              <div class="row">
+                <div>Tax (${taxRate}%)</div>
+                <div>$${taxAmount.toFixed(2)}</div>
+              </div>
+              <div class="row total">
+                <div>Total</div>
+                <div>$${total.toFixed(2)}</div>
+              </div>
+            </div>
+            
+            ${notes ? `
+              <div class="preview-section">
+                <h4>Notes</h4>
+                <p>${notes}</p>
+              </div>
+            ` : ''}
+            
+            <div class="preview-footer">
+              <h4>Terms & Conditions</h4>
+              <p>${terms}</p>
+            </div>
+          </div>
+          
+          <div class="preview-actions">
+            <button id="closePreview" class="secondary">Close</button>
+            <button id="printQuote">Print</button>
+          </div>
+        `;
+        
+        this.openModal();
+        
+        // Set up print button
+        document.getElementById('printQuote').addEventListener('click', () => {
+          window.print();
+        });
+        
+        document.getElementById('closePreview').addEventListener('click', () => {
+          this.closeModal();
+        });
+      }
+      
+      // VIEW QUOTE
+      viewQuote(quoteId) {
+        const quote = this.db.getQuote(quoteId);
+        
+        if (!quote) {
+          this.showToast('Quote not found', 'error');
+          return;
+        }
+        
+        const client = this.db.getClient(quote.clientId);
+        
+        // Navigate to quote viewer page
+        const content = document.getElementById('content');
+        
+        content.innerHTML = `
+          <h1>
+            Quote #${quote.quoteNumber}
+            <div>
+              <button id="editQuoteBtn">Edit</button>
+              <button id="duplicateQuoteBtn">Duplicate</button>
+              <button id="backToQuotes" class="secondary">Back</button>
+            </div>
+          </h1>
+          
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                Status: <span class="status-badge status-${quote.status.toLowerCase()}">${quote.status}</span>
+              </div>
+              <div>
+                <button id="printQuoteBtn">Print</button>
+                <button id="emailQuoteBtn">Email</button>
+                <button id="markSentBtn" ${quote.status !== 'Draft' ? 'style="display:none"' : ''}>Mark as Sent</button>
+                <button id="markAcceptedBtn" ${quote.status !== 'Sent' ? 'style="display:none"' : ''}>Mark as Accepted</button>
+                <button id="markRejectedBtn" ${quote.status !== 'Sent' ? 'style="display:none"' : ''}>Mark as Rejected</button>
+              </div>
+            </div>
+            
+            <div class="quote-print-view">
+              <div class="preview-header">
+                <div>
+                  <div class="preview-quote-number">Quote #${quote.quoteNumber}</div>
+                  <div class="preview-date">Date: ${new Date(quote.date).toLocaleDateString()}</div>
+                </div>
+                <div class="preview-business">
+                  <div><strong>${this.db.settings.businessName}</strong></div>
+                  <div>${this.db.settings.businessAddress}</div>
+                  <div>${this.db.settings.businessPhone}</div>
+                  <div>${this.db.settings.businessEmail}</div>
+                </div>
+              </div>
+              
+              <div class="preview-client">
+                <div><strong>Client:</strong></div>
+                <div><strong>${client ? client.name : 'Unknown Client'}</strong></div>
+                <div>${client ? client.address : ''}</div>
+                <div>${client ? client.phone : ''}</div>
+                <div>${client ? client.email : ''}</div>
+              </div>
+              
+              <table class="preview-table">
+                <thead>
+                  <tr>
+                    <th style="width: 50%">Description</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${quote.items.map(item => `
+                    <tr>
+                      <td>${item.description}</td>
+                      <td>${item.quantity}</td>
+                      <td>$${item.unitPrice.toFixed(2)}</td>
+                      <td>$${(item.quantity * item.unitPrice).toFixed(2)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+              
+              <div class="preview-totals">
+                <div class="row">
+                  <div>Subtotal</div>
+                  <div>$${quote.subtotal.toFixed(2)}</div>
+                </div>
+                <div class="row">
+                  <div>Tax (${quote.taxRate}%)</div>
+                  <div>$${quote.taxAmount.toFixed(2)}</div>
+                </div>
+                <div class="row total">
+                  <div>Total</div>
+                  <div>$${quote.total.toFixed(2)}</div>
+                </div>
+              </div>
+              
+              ${quote.notes ? `
+                <div class="preview-section">
+                  <h4>Notes</h4>
+                  <p>${quote.notes}</p>
+                </div>
+              ` : ''}
+              
+              <div class="preview-footer">
+                <h4>Terms & Conditions</h4>
+                <p>${quote.terms}</p>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // Setup event listeners
+        document.getElementById('backToQuotes').addEventListener('click', () => {
+          this.loadPage('quotes');
+        });
+        
+        document.getElementById('editQuoteBtn').addEventListener('click', () => {
+          this.loadQuoteForm(quoteId);
+        });
+        
+        document.getElementById('duplicateQuoteBtn').addEventListener('click', () => {
+          const duplicateQuote = {
+            ...quote,
+            id: null,
+            quoteNumber: null,
+            status: 'Draft',
+            created: null
+          };
+          
+          this.loadQuoteForm(null, null, duplicateQuote);
+        });
+        
+        document.getElementById('printQuoteBtn').addEventListener('click', () => {
+          window.print();
+        });
+        
+        document.getElementById('emailQuoteBtn').addEventListener('click', () => {
+          // Generate mailto link with quote information
+          const subject = encodeURIComponent(`Quote #${quote.quoteNumber} from ${this.db.settings.businessName}`);
+          const body = encodeURIComponent(`Please find attached Quote #${quote.quoteNumber}.\n\nTotal Amount: $${quote.total.toFixed(2)}\n\nThank you for your business.\n\n${this.db.settings.businessName}`);
+          
+          window.location.href = `mailto:${client ? client.email : ''}?subject=${subject}&body=${body}`;
+        });
+        
+        // Status change buttons
+        document.getElementById('markSentBtn')?.addEventListener('click', () => {
+          this.updateQuoteStatus(quoteId, 'Sent');
+        });
+        
+        document.getElementById('markAcceptedBtn')?.addEventListener('click', () => {
+          this.updateQuoteStatus(quoteId, 'Accepted');
+        });
+        
+        document.getElementById('markRejectedBtn')?.addEventListener('click', () => {
+          this.updateQuoteStatus(quoteId, 'Rejected');
+        });
+      }
+      
+      updateQuoteStatus(quoteId, status) {
+        const quote = this.db.getQuote(quoteId);
+        if (!quote) return;
+        
+        quote.status = status;
+        quote.updated = new Date().toISOString();
+        
+        this.db.saveQuote(quote);
+        this.showToast(`Quote marked as ${status}`, 'success');
+        this.viewQuote(quoteId);
+      }
+      
+      // SETTINGS PAGE
+      loadSettingsPage() {
+        const settings = this.db.settings;
+        const content = document.getElementById('content');
+        
+        content.innerHTML = `
+          <h1>Settings</h1>
+          
+          <div class="card">
+            <h3>Business Information</h3>
+            <form id="settingsForm">
+              <div class="form-group">
+                <label for="businessName">Business Name</label>
+                <input type="text" id="businessName" name="businessName" value="${settings.businessName}">
+              </div>
+              
+              <div class="form-group">
+                <label for="businessAddress">Business Address</label>
+                <textarea id="businessAddress" name="businessAddress" rows="3">${settings.businessAddress}</textarea>
+              </div>
+              
+              <div class="form-group">
+                <label for="businessPhone">Business Phone</label>
+                <input type="tel" id="businessPhone" name="businessPhone" value="${settings.businessPhone}">
+              </div>
+              
+              <div class="form-group">
+                <label for="businessEmail">Business Email</label>
+                <input type="email" id="businessEmail" name="businessEmail" value="${settings.businessEmail}">
+              </div>
+              
+              <div class="form-group logo-upload">
+                <label>Business Logo</label>
+                <div class="file-upload">
+                  <button type="button" class="secondary">Choose Logo File</button>
+                  <input type="file" id="logoUpload" accept="image/*">
+                </div>
+                <div id="logoPreview" class="logo-preview" style="${settings.logo ? `background-image: url(${settings.logo})` : ''}">
+                  ${!settings.logo ? 'No logo uploaded' : ''}
+                </div>
+              </div>
+            </form>
+          </div>
+          
+          <div class="card">
+            <h3>Quote Settings</h3>
+            <form id="quoteSettingsForm">
+              <div class="form-group">
+                <label for="quotePrefix">Quote Number Prefix</label>
+                <input type="text" id="quotePrefix" name="quotePrefix" value="${settings.quotePrefix}">
+              </div>
+              
+              <div class="form-group">
+                <label for="nextQuoteNumber">Next Quote Number</label>
+                <input type="number" id="nextQuoteNumber" name="nextQuoteNumber" value="${settings.nextQuoteNumber}" min="1">
+              </div>
+              
+              <div class="form-group">
+                <label for="defaultTaxRate">Default Tax Rate (%)</label>
+                <input type="number" id="defaultTaxRate" name="taxRate" step="0.01" min="0" max="100" value="${settings.taxRate}">
+              </div>
+            </form>
+          </div>
+          
+          <div class="card">
+            <h3>Backup Settings</h3>
+            <div class="toggle-option">
+              <div class="toggle-label">Enable Automatic Backups</div>
+              <label class="switch">
+                <input type="checkbox" id="autoBackupToggle" ${settings.autoBackup ? 'checked' : ''}>
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="backup-indicator">
+              Last backup: ${localStorage.getItem('lastBackup') ? new Date(localStorage.getItem('lastBackup')).toLocaleString() : 'Never'}
+            </div>
+            <button id="manualBackupBtn" class="secondary" style="margin-top: 1rem;">Backup Now</button>
+          </div>
+          
+          <div class="form-actions">
+            <button id="saveSettingsBtn">Save Settings</button>
+          </div>
+        `;
+        
+        // Setup logo upload
+        document.getElementById('logoUpload').addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const logoPreview = document.getElementById('logoPreview');
+              logoPreview.style.backgroundImage = `url(${e.target.result})`;
+              logoPreview.textContent = '';
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+        
+        // Auto backup toggle
+        document.getElementById('autoBackupToggle').addEventListener('change', (e) => {
+          this.db.saveSettings({ autoBackup: e.target.checked });
+          document.getElementById('backupStatus').textContent = e.target.checked ? 'Active' : 'Disabled';
+        });
+        
+        // Manual backup button
+        document.getElementById('manualBackupBtn').addEventListener('click', () => {
+          this.db.backupToLocalStorage();
+          document.querySelector('.backup-indicator').textContent = `Last backup: ${new Date().toLocaleString()}`;
+          this.showToast('Backup completed successfully', 'success');
+        });
+        
+        // Save settings
+        document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+          const businessForm = new FormData(document.getElementById('settingsForm'));
+          const quoteForm = new FormData(document.getElementById('quoteSettingsForm'));
+          
+          const newSettings = {
+            businessName: businessForm.get('businessName'),
+            businessAddress: businessForm.get('businessAddress'),
+            businessPhone: businessForm.get('businessPhone'),
+            businessEmail: businessForm.get('businessEmail'),
+            quotePrefix: quoteForm.get('quotePrefix'),
+            nextQuoteNumber: parseInt(quoteForm.get('nextQuoteNumber')),
+            taxRate: parseFloat(quoteForm.get('taxRate'))
+          };
+          
+          // Handle logo
+          const logoUpload = document.getElementById('logoUpload');
+          if (logoUpload.files.length > 0) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              newSettings.logo = e.target.result;
+              this.db.saveSettings(newSettings);
+              this.updateBusinessLogo();
+              this.showToast('Settings saved successfully', 'success');
+            };
+            reader.readAsDataURL(logoUpload.files[0]);
+          } else {
+            this.db.saveSettings(newSettings);
+            this.updateBusinessLogo();
+            this.showToast('Settings saved successfully', 'success');
+          }
+        });
+      }
+      
+      updateBusinessLogo() {
+        const logo = this.db.settings.logo;
+        const logoElement = document.getElementById('businessLogo');
+        
+        if (logo) {
+          logoElement.style.backgroundImage = `url(${logo})`;
+          logoElement.innerHTML = '';
+        } else {
+          logoElement.style.backgroundImage = '';
+          logoElement.innerHTML = `<div class="default-logo">${this.db.settings.businessName || 'Service Manager'}</div>`;
+        }
+      }
+      
+      // HELPERS
+      openModal() {
+        document.getElementById('modal').classList.add('active');
+      }
+      
+      closeModal() {
+        document.getElementById('modal').classList.remove('active');
+      }
+      
+      showToast(message, type = '') {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = 'toast show';
+        
+        if (type) {
+          toast.classList.add(type);
+        }
+        
+        setTimeout(() => {
+          toast.classList.remove('show');
+        }, 3000);
+      }
+      
+      calculateQuoteTotal(quote) {
+        if (!quote.total) {
+          // Calculate for older quotes that might not have totals stored
+          const subtotal = this.calculateSubtotal(quote.items || []);
+          const taxAmount = subtotal * ((quote.taxRate || 0) / 100);
+          return subtotal + taxAmount;
+        }
+        return quote.total;
+      }
+      
+      // Data export/import
+      exportData() {
+        const data = this.db.exportData();
+        const dataStr = JSON.stringify(data, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `service-manager-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        this.showToast('Data exported successfully', 'success');
+      }
+      
+      importData(file) {
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = JSON.parse(e.target.result);
+            if (confirm('This will replace your current data with the imported data. Continue?')) {
+              const success = this.db.importData(data);
+              if (success) {
+                this.showToast('Data imported successfully', 'success');
+                this.updateBusinessLogo();
+                this.loadPage(this.currentPage); // Reload current page
+              } else {
+                this.showToast('Failed to import data', 'error');
+              }
+            }
+          } catch (error) {
+            console.error('Import error:', error);
+            this.showToast('Invalid data file', 'error');
+          }
+        };
+        reader.readAsText(file);
+      }
+    }
+
+    // Initialize the app
+    const db = new Database();
+    const ui = new UIManager(db);
+    
+    // Handle online/offline status
+    window.addEventListener('online', () => {
+      ui.showToast('You are back online', 'success');
+    });
+    
+    window.addEventListener('offline', () => {
+      ui.showToast('You are currently offline. Changes will be saved locally.', 'error');
+    });
+  </script>
+</body>
+</html>

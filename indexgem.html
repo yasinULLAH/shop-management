@@ -1,0 +1,2070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline CRM & Quote App</title>
+    <style>
+        /* Basic Reset & Font */
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f5f7fa;
+            --text-color: #333;
+            --border-color: #ddd;
+            --hover-color: #3a7bc8;
+            --danger-color: #d9534f;
+            --success-color: #5cb85c;
+            --warning-color: #f0ad4e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+
+        /* Layout */
+        .app-container {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            max-width: 1400px; /* Max width for larger screens */
+            margin: 0 auto; /* Center the container */
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 200px;
+            background-color: #333; /* Darker sidebar */
+            color: #fff;
+            padding-top: 20px;
+            flex-shrink: 0; /* Prevent sidebar from shrinking */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar nav ul {
+            list-style: none;
+        }
+
+        .sidebar nav li a {
+            display: block;
+            padding: 12px 20px;
+            color: #eee;
+            text-decoration: none;
+            border-left: 4px solid transparent;
+            transition: background-color 0.3s ease, border-left-color 0.3s ease;
+        }
+
+        .sidebar nav li a:hover {
+            background-color: #444;
+        }
+
+        .sidebar nav li a.active {
+            background-color: #555;
+            border-left-color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex-grow: 1;
+            padding: 25px;
+            overflow-y: auto; /* Allow scrolling within content */
+        }
+
+        .page {
+            display: none; /* Hide pages by default */
+        }
+
+        .page.active {
+            display: block; /* Show active page */
+        }
+
+        /* Common Styles */
+        h1, h2, h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        h1 { font-size: 1.8em; }
+        h2 { font-size: 1.5em; }
+        h3 { font-size: 1.2em; margin-top: 20px; }
+
+        button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            margin-right: 8px;
+            margin-top: 10px;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .btn-primary:hover { background-color: var(--hover-color); }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover { background-color: #5a6268; }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        .btn-danger:hover { background-color: #c9302c; }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        .btn-success:hover { background-color: #4cae4c; }
+
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        .btn-warning:hover { background-color: #eea236; }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.9em;
+            margin-right: 5px;
+            margin-top: 0;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="number"],
+        input[type="date"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-row > div {
+            flex: 1;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--secondary-color);
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* Specific Page Styles */
+
+        /* Clients Page */
+        #client-search {
+            max-width: 400px;
+            margin-bottom: 20px;
+        }
+
+        /* Quote Form */
+        #quote-items-table tbody tr td {
+            vertical-align: middle;
+        }
+        #quote-items-table input[type="number"] {
+            width: 80px; /* Smaller width for quantity/price */
+            margin-bottom: 0;
+        }
+        #quote-items-table textarea {
+             min-height: 40px;
+             margin-bottom: 0;
+        }
+
+        .quote-totals {
+            margin-top: 20px;
+            text-align: right;
+        }
+        .quote-totals p {
+            margin-bottom: 5px;
+            font-size: 1.1em;
+        }
+        .quote-totals strong {
+            display: inline-block;
+            min-width: 100px;
+        }
+
+        /* Quote Preview */
+        #quote-preview-content {
+            border: 1px solid var(--border-color);
+            padding: 30px;
+            margin-top: 20px;
+            background-color: #fff;
+        }
+        #quote-preview-content .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        #quote-preview-content .business-info p,
+        #quote-preview-content .quote-meta p {
+            margin-bottom: 3px;
+            font-size: 0.95em;
+        }
+         #quote-preview-content .business-info h2 {
+             margin-bottom: 10px;
+             color: #333; /* Darker for preview */
+         }
+        #quote-preview-content .client-info {
+            margin-bottom: 30px;
+        }
+        #quote-preview-content .client-info h3 {
+            margin-bottom: 10px;
+            color: #555;
+        }
+        #quote-preview-content table {
+            margin-top: 0;
+        }
+        #quote-preview-content th {
+             background-color: #eee; /* Lighter for preview */
+        }
+        #quote-preview-content .quote-totals {
+            margin-top: 30px;
+            text-align: right;
+        }
+        #quote-preview-content .quote-terms,
+        #quote-preview-content .quote-notes {
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #555;
+            white-space: pre-wrap; /* Preserve line breaks */
+        }
+        #quote-preview-content .quote-terms h4,
+        #quote-preview-content .quote-notes h4 {
+            margin-bottom: 5px;
+            color: #333;
+        }
+        #business-logo-preview {
+            max-width: 150px;
+            max-height: 100px;
+            margin-bottom: 10px;
+            display: block; /* Ensure it behaves like a block element */
+        }
+        #settings-logo-preview {
+            max-width: 150px;
+            max-height: 100px;
+            margin-top: 10px;
+            border: 1px solid var(--border-color);
+            padding: 5px;
+            display: block; /* Make it block to take space */
+            object-fit: contain; /* Ensure logo fits */
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            color: white;
+            text-align: center;
+            display: inline-block;
+            min-width: 60px;
+        }
+        .status-draft { background-color: #6c757d; } /* Secondary */
+        .status-sent { background-color: var(--primary-color); } /* Primary */
+        .status-accepted { background-color: var(--success-color); } /* Success */
+        .status-rejected { background-color: var(--danger-color); } /* Danger */
+
+        /* Utility Classes */
+        .hidden { display: none; }
+        .text-right { text-align: right; }
+        .mt-1 { margin-top: 0.5rem; }
+        .mt-2 { margin-top: 1rem; }
+        .mb-1 { margin-bottom: 0.5rem; }
+        .mb-2 { margin-bottom: 1rem; }
+        .d-flex { display: flex; }
+        .justify-between { justify-content: space-between; }
+        .align-center { align-items: center; }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                padding-top: 0;
+                flex-direction: row; /* Horizontal nav on mobile */
+                overflow-x: auto; /* Allow scrolling if too many items */
+                background-color: #333;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            }
+            .sidebar nav ul {
+                display: flex;
+                flex-direction: row;
+                width: 100%;
+            }
+             .sidebar nav li {
+                 flex: 1; /* Distribute space */
+                 text-align: center;
+             }
+            .sidebar nav li a {
+                border-left: none;
+                border-bottom: 4px solid transparent; /* Border at bottom */
+                padding: 15px 10px; /* Adjust padding */
+            }
+             .sidebar nav li a.active {
+                 border-left-color: transparent;
+                 border-bottom-color: var(--primary-color);
+             }
+            .main-content {
+                padding: 15px;
+            }
+            h1 { font-size: 1.6em; }
+            h2 { font-size: 1.3em; }
+            button { width: 100%; margin-bottom: 10px; margin-right: 0; }
+            .form-row { flex-direction: column; gap: 0; }
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+            thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+            tr { border: 1px solid #ccc; margin-bottom: 10px; }
+            td {
+                border: none;
+                border-bottom: 1px solid #eee;
+                position: relative;
+                padding-left: 50%;
+                text-align: left;
+            }
+            td:before {
+                position: absolute;
+                top: 6px;
+                left: 6px;
+                width: 45%;
+                padding-right: 10px;
+                white-space: nowrap;
+                content: attr(data-label);
+                font-weight: bold;
+            }
+            #quote-items-table input[type="number"] { width: 100%; }
+            #quote-items-table td:before { top: 12px; } /* Adjust label pos */
+
+            /* Ensure buttons in table cells stack */
+             td:last-child button {
+                 display: block;
+                 width: calc(100% - 50%); /* Adjust width considering padding */
+                 margin-left: 50%;
+                 margin-bottom: 5px;
+             }
+             td:last-child button:last-child {
+                 margin-bottom: 0;
+             }
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                font-family: serif; /* Use serif for print */
+                background-color: #fff;
+                color: #000;
+                line-height: 1.4;
+            }
+            .app-container, .sidebar, .main-content > *:not(#quote-preview-page),
+            .main-content #quote-preview-page > *:not(#quote-preview-content),
+            button, input, select, textarea, label, h1:not(.print-visible), h2:not(.print-visible), h3:not(.print-visible),
+            #client-search, #add-client-btn, #add-quote-btn, .action-buttons, #settings-form, #backup-restore-section,
+            .sidebar nav, .main-content header /* Hide non-print elements */
+            {
+                display: none !important;
+            }
+
+            .main-content {
+                padding: 0;
+                overflow: visible;
+            }
+
+            #quote-preview-page, #quote-preview-content {
+                display: block !important; /* Ensure preview is visible */
+                border: none;
+                padding: 0;
+                margin: 0;
+                box-shadow: none;
+                width: 100%;
+            }
+
+             #quote-preview-content .header {
+                 border-bottom: 2px solid #000;
+                 color: #000;
+             }
+             #quote-preview-content .business-info h2 { color: #000; }
+             #quote-preview-content .client-info h3 { color: #000; }
+             #quote-preview-content th { background-color: #eee; color: #000; }
+             #quote-preview-content td, #quote-preview-content th { border: 1px solid #ccc; padding: 8px; }
+             #quote-preview-content .quote-totals p { font-size: 1em; }
+             #quote-preview-content .quote-terms, #quote-preview-content .quote-notes { color: #000; font-size: 0.9em; }
+             #quote-preview-content .quote-terms h4, #quote-preview-content .quote-notes h4 { color: #000; }
+
+            /* Ensure logo prints */
+            #business-logo-preview {
+                max-width: 150px;
+                max-height: 80px;
+                display: block !important; /* Override potential display: none */
+                page-break-inside: avoid;
+            }
+
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            thead { display: table-header-group; } /* Repeat header on pages */
+            tbody { display: table-row-group; }
+
+            /* Prevent page breaks inside specific sections */
+            .header, .client-info, .quote-totals, .quote-terms, .quote-notes {
+                page-break-inside: avoid;
+            }
+
+            /* Adjust margins for printing */
+            @page {
+                margin: 0.75in;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <nav>
+                <ul>
+                    <li><a href="#clients" class="nav-link active" data-page="clients-page">Clients</a></li>
+                    <li><a href="#quotes" class="nav-link" data-page="quotes-page">Quotes</a></li>
+                    <li><a href="#new-quote" class="nav-link" data-page="new-quote-page">New Quote</a></li>
+                    <li><a href="#settings" class="nav-link" data-page="settings-page">Settings</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <section id="clients-page" class="page active">
+                <header class="d-flex justify-between align-center mb-2">
+                    <h1>Clients</h1>
+                    <button id="add-client-btn" class="btn-primary">Add New Client</button>
+                </header>
+                <input type="text" id="client-search" placeholder="Search clients by name, email, or phone...">
+                <table id="clients-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+                <div id="client-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                    <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px;">
+                        <h2 id="client-modal-title">Add Client</h2>
+                        <form id="client-form">
+                            <input type="hidden" id="client-id">
+                            <div class="form-group">
+                                <label for="client-name">Name*</label>
+                                <input type="text" id="client-name" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="client-phone">Phone</label>
+                                    <input type="tel" id="client-phone">
+                                </div>
+                                <div class="form-group">
+                                    <label for="client-email">Email</label>
+                                    <input type="email" id="client-email">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="client-address">Address</label>
+                                <textarea id="client-address"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="client-notes">Notes</label>
+                                <textarea id="client-notes"></textarea>
+                            </div>
+                            <div class="text-right">
+                                <button type="button" id="cancel-client-btn" class="btn-secondary">Cancel</button>
+                                <button type="submit" class="btn-primary">Save Client</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                 <div id="client-detail-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                    <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto;">
+                        <h2 id="client-detail-name">Client Details</h2>
+                        <p><strong>Phone:</strong> <span id="client-detail-phone"></span></p>
+                        <p><strong>Email:</strong> <span id="client-detail-email"></span></p>
+                        <p><strong>Address:</strong> <span id="client-detail-address" style="white-space: pre-wrap;"></span></p>
+                        <p><strong>Notes:</strong> <span id="client-detail-notes" style="white-space: pre-wrap;"></span></p>
+                        <hr style="margin: 20px 0;">
+                        <h3>Service History (Quotes)</h3>
+                        <table id="client-detail-quotes-table">
+                            <thead>
+                                <tr>
+                                    <th>Quote #</th>
+                                    <th>Date</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                </tbody>
+                        </table>
+                         <div class="text-right mt-2">
+                            <button type="button" id="close-client-detail-btn" class="btn-secondary">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="quotes-page" class="page">
+                 <header class="d-flex justify-between align-center mb-2">
+                    <h1>Quotes</h1>
+                    <button id="add-quote-btn" class="btn-primary">Create New Quote</button>
+                </header>
+                <table id="quotes-table">
+                    <thead>
+                        <tr>
+                            <th>Quote #</th>
+                            <th>Client</th>
+                            <th>Date</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </section>
+
+            <section id="new-quote-page" class="page">
+                <h1 id="quote-page-title">Create New Quote</h1>
+                <form id="quote-form">
+                    <input type="hidden" id="quote-id">
+                    <input type="hidden" id="quote-number-hidden"> <div class="form-row">
+                        <div class="form-group">
+                            <label for="quote-client">Client*</label>
+                            <select id="quote-client" required>
+                                <option value="">Select Client...</option>
+                                </select>
+                            <button type="button" id="quote-add-client-btn" class="btn-secondary btn-small mt-1">Add New Client</button>
+                        </div>
+                         <div class="form-group">
+                            <label for="quote-date">Date*</label>
+                            <input type="date" id="quote-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="quote-status">Status</label>
+                            <select id="quote-status">
+                                <option value="Draft">Draft</option>
+                                <option value="Sent">Sent</option>
+                                <option value="Accepted">Accepted</option>
+                                <option value="Rejected">Rejected</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h3>Items / Services</h3>
+                    <table id="quote-items-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">Description*</th>
+                                <th style="width: 15%;">Quantity*</th>
+                                <th style="width: 15%;">Unit Price*</th>
+                                <th style="width: 20%;">Line Total</th>
+                                <th style="width: 10%;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            </tbody>
+                    </table>
+                    <button type="button" id="add-quote-item-btn" class="btn-secondary mt-1">Add Item</button>
+
+                    <div class="quote-totals">
+                        <p><strong>Subtotal:</strong> <span id="quote-subtotal">$0.00</span></p>
+                        <p><strong>Tax (<span id="quote-tax-rate-display">0</span>%):</strong> <span id="quote-tax-amount">$0.00</span></p>
+                        <p><strong>Total:</strong> <span id="quote-total">$0.00</span></p>
+                    </div>
+
+                    <hr style="margin: 25px 0;">
+
+                    <div class="form-group">
+                        <label for="quote-terms">Terms & Conditions</label>
+                        <textarea id="quote-terms" placeholder="e.g., Payment due upon receipt, 50% deposit required..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="quote-notes">Notes</label>
+                        <textarea id="quote-notes" placeholder="e.g., Optional services, specific instructions..."></textarea>
+                    </div>
+
+                    <div class="text-right">
+                        <button type="button" id="cancel-quote-btn" class="btn-secondary">Cancel</button>
+                         <button type="button" id="preview-quote-btn" class="btn-warning">Preview</button>
+                        <button type="submit" class="btn-primary">Save Quote</button>
+                    </div>
+                </form>
+            </section>
+
+            <section id="quote-preview-page" class="page">
+                <header class="d-flex justify-between align-center mb-2">
+                    <h1>Quote Preview</h1>
+                    <div>
+                        <button id="close-preview-btn" class="btn-secondary">Close Preview</button>
+                        <button id="print-quote-btn" class="btn-primary">Print Quote</button>
+                    </div>
+                </header>
+                <div id="quote-preview-content">
+                    <div class="header">
+                        <div class="business-info">
+                            <img id="business-logo-preview" src="https://placehold.co/150x80/e2e8f0/adb5bd?text=Your+Logo" alt="Business Logo">
+                            <h2 id="preview-business-name">[Business Name]</h2>
+                            <p id="preview-business-address">[Business Address]</p>
+                            <p>Phone: <span id="preview-business-phone">[Phone]</span></p>
+                            <p>Email: <span id="preview-business-email">[Email]</span></p>
+                        </div>
+                        <div class="quote-meta text-right">
+                            <h2>QUOTE</h2>
+                            <p><strong>Quote #:</strong> <span id="preview-quote-number"></span></p>
+                            <p><strong>Date:</strong> <span id="preview-quote-date"></span></p>
+                            <p><strong>Status:</strong> <span id="preview-quote-status"></span></p>
+                        </div>
+                    </div>
+
+                    <div class="client-info">
+                        <h3>Client Information:</h3>
+                        <p><strong>Name:</strong> <span id="preview-client-name"></span></p>
+                        <p><strong>Address:</strong> <span id="preview-client-address" style="white-space: pre-wrap;"></span></p>
+                        <p><strong>Phone:</strong> <span id="preview-client-phone"></span></p>
+                        <p><strong>Email:</strong> <span id="preview-client-email"></span></p>
+                    </div>
+
+                    <table id="preview-items-table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Line Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            </tbody>
+                    </table>
+
+                    <div class="quote-totals">
+                        <p><strong>Subtotal:</strong> <span id="preview-subtotal"></span></p>
+                        <p><strong>Tax (<span id="preview-tax-rate"></span>%):</strong> <span id="preview-tax-amount"></span></p>
+                        <p><strong>Total:</strong> <span id="preview-total"></span></p>
+                    </div>
+
+                    <div class="quote-terms">
+                        <h4>Terms & Conditions:</h4>
+                        <p id="preview-terms"></p>
+                    </div>
+
+                     <div class="quote-notes">
+                        <h4>Notes:</h4>
+                        <p id="preview-notes"></p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="settings-page" class="page">
+                <h1>Settings</h1>
+                <form id="settings-form">
+                    <h3>Business Information</h3>
+                    <div class="form-group">
+                        <label for="settings-business-name">Business Name</label>
+                        <input type="text" id="settings-business-name">
+                    </div>
+                    <div class="form-group">
+                        <label for="settings-business-address">Address</label>
+                        <textarea id="settings-business-address"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="settings-business-phone">Phone</label>
+                            <input type="tel" id="settings-business-phone">
+                        </div>
+                        <div class="form-group">
+                            <label for="settings-business-email">Email</label>
+                            <input type="email" id="settings-business-email">
+                        </div>
+                    </div>
+                     <div class="form-group">
+                        <label for="settings-logo">Business Logo</label>
+                        <input type="file" id="settings-logo" accept="image/*">
+                        <img id="settings-logo-preview" src="https://placehold.co/150x100/e2e8f0/adb5bd?text=No+Logo" alt="Logo Preview">
+                        <button type="button" id="remove-logo-btn" class="btn-danger btn-small mt-1">Remove Logo</button>
+                        <small style="display: block; margin-top: 5px;">Recommended size: ~150x80px. Max size ~1MB due to browser storage limits.</small>
+                    </div>
+
+                    <h3>Quote Settings</h3>
+                     <div class="form-row">
+                        <div class="form-group">
+                            <label for="settings-tax-rate">Tax Rate (%)</label>
+                            <input type="number" id="settings-tax-rate" step="0.01" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="settings-quote-prefix">Quote Prefix</label>
+                            <input type="text" id="settings-quote-prefix" placeholder="e.g., Q-, INV-">
+                        </div>
+                    </div>
+                     <div class="form-group">
+                        <label for="settings-default-terms">Default Terms & Conditions</label>
+                        <textarea id="settings-default-terms"></textarea>
+                    </div>
+                     <div class="form-group">
+                        <label for="settings-default-notes">Default Notes</label>
+                        <textarea id="settings-default-notes"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Save Settings</button>
+                </form>
+
+                <hr style="margin: 30px 0;">
+
+                <section id="backup-restore-section">
+                    <h3>Backup & Restore</h3>
+                    <p>Export all your data (clients, quotes, settings) as a JSON file for backup or transfer. Import a previously exported file to restore data.</p>
+                     <p style="color: var(--danger-color); font-weight: bold;">Warning: Importing data will overwrite any existing data in the app.</p>
+                    <div class="mt-2">
+                        <button id="export-data-btn" class="btn-success">Export Data (JSON)</button>
+                        <label for="import-file-input" class="btn-warning" style="display: inline-block; cursor: pointer;">
+                            Import Data (JSON)
+                        </label>
+                        <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                    </div>
+                    <p id="backup-status" class="mt-1"></p>
+                </section>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { // Add try block around the main setup
+                // --- Constants ---
+                const DB_KEY = 'offlineCrmQuoteAppData';
+                const BACKUP_KEY = 'offlineCrmQuoteAppData_Backup';
+                const AUTO_BACKUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+                // --- State ---
+                let appData = {
+                    clients: [],
+                    quotes: [],
+                    settings: {
+                        businessName: '',
+                        businessAddress: '',
+                        businessPhone: '',
+                        businessEmail: '',
+                        logoDataUrl: null,
+                        taxRate: 0,
+                        quotePrefix: 'Q-',
+                        nextQuoteNumber: 1,
+                        defaultTerms: '',
+                        defaultNotes: ''
+                    }
+                };
+                let autoBackupTimer = null;
+
+                // --- UI Elements (Ensure these IDs match the HTML) ---
+                const sidebarLinks = document.querySelectorAll('.sidebar .nav-link');
+                const pages = document.querySelectorAll('.main-content .page');
+                const clientsTableBody = document.querySelector('#clients-table tbody');
+                const clientSearchInput = document.getElementById('client-search');
+                const addClientBtn = document.getElementById('add-client-btn');
+                const clientModal = document.getElementById('client-modal');
+                const clientModalTitle = document.getElementById('client-modal-title');
+                const clientForm = document.getElementById('client-form');
+                const cancelClientBtn = document.getElementById('cancel-client-btn');
+                const clientIdInput = document.getElementById('client-id');
+                const clientNameInput = document.getElementById('client-name');
+                const clientPhoneInput = document.getElementById('client-phone');
+                const clientEmailInput = document.getElementById('client-email');
+                const clientAddressInput = document.getElementById('client-address');
+                const clientNotesInput = document.getElementById('client-notes');
+                const clientDetailModal = document.getElementById('client-detail-modal');
+                const closeClientDetailBtn = document.getElementById('close-client-detail-btn');
+                const clientDetailName = document.getElementById('client-detail-name');
+                const clientDetailPhone = document.getElementById('client-detail-phone');
+                const clientDetailEmail = document.getElementById('client-detail-email');
+                const clientDetailAddress = document.getElementById('client-detail-address');
+                const clientDetailNotes = document.getElementById('client-detail-notes');
+                const clientDetailQuotesTableBody = document.querySelector('#client-detail-quotes-table tbody');
+
+
+                const quotesTableBody = document.querySelector('#quotes-table tbody');
+                const addQuoteBtn = document.getElementById('add-quote-btn');
+                const quotePage = document.getElementById('new-quote-page');
+                const quotePageTitle = document.getElementById('quote-page-title');
+                const quoteForm = document.getElementById('quote-form');
+                const quoteIdInput = document.getElementById('quote-id');
+                const quoteNumberHiddenInput = document.getElementById('quote-number-hidden');
+                const quoteClientSelect = document.getElementById('quote-client');
+                const quoteAddClientBtn = document.getElementById('quote-add-client-btn');
+                const quoteDateInput = document.getElementById('quote-date');
+                const quoteStatusSelect = document.getElementById('quote-status');
+                const quoteItemsTableBody = document.querySelector('#quote-items-table tbody');
+                const addQuoteItemBtn = document.getElementById('add-quote-item-btn');
+                const quoteSubtotalSpan = document.getElementById('quote-subtotal');
+                const quoteTaxRateSpan = document.getElementById('quote-tax-rate-display');
+                const quoteTaxAmountSpan = document.getElementById('quote-tax-amount');
+                const quoteTotalSpan = document.getElementById('quote-total');
+                const quoteTermsInput = document.getElementById('quote-terms');
+                const quoteNotesInput = document.getElementById('quote-notes');
+                const cancelQuoteBtn = document.getElementById('cancel-quote-btn');
+                const previewQuoteBtn = document.getElementById('preview-quote-btn');
+                const saveQuoteBtn = quoteForm.querySelector('button[type="submit"]');
+
+                const quotePreviewPage = document.getElementById('quote-preview-page');
+                const quotePreviewContent = document.getElementById('quote-preview-content');
+                const closePreviewBtn = document.getElementById('close-preview-btn');
+                const printQuoteBtn = document.getElementById('print-quote-btn');
+                // Preview elements
+                const previewBusinessLogo = document.getElementById('business-logo-preview');
+                const previewBusinessName = document.getElementById('preview-business-name');
+                const previewBusinessAddress = document.getElementById('preview-business-address');
+                const previewBusinessPhone = document.getElementById('preview-business-phone');
+                const previewBusinessEmail = document.getElementById('preview-business-email');
+                const previewQuoteNumber = document.getElementById('preview-quote-number');
+                const previewQuoteDate = document.getElementById('preview-quote-date');
+                const previewQuoteStatus = document.getElementById('preview-quote-status');
+                const previewClientName = document.getElementById('preview-client-name');
+                const previewClientAddress = document.getElementById('preview-client-address');
+                const previewClientPhone = document.getElementById('preview-client-phone');
+                const previewClientEmail = document.getElementById('preview-client-email');
+                const previewItemsTableBody = document.querySelector('#preview-items-table tbody');
+                const previewSubtotal = document.getElementById('preview-subtotal');
+                const previewTaxRate = document.getElementById('preview-tax-rate');
+                const previewTaxAmount = document.getElementById('preview-tax-amount');
+                const previewTotal = document.getElementById('preview-total');
+                const previewTerms = document.getElementById('preview-terms');
+                const previewNotes = document.getElementById('preview-notes');
+
+
+                const settingsForm = document.getElementById('settings-form');
+                const settingsBusinessName = document.getElementById('settings-business-name');
+                const settingsBusinessAddress = document.getElementById('settings-business-address');
+                const settingsBusinessPhone = document.getElementById('settings-business-phone');
+                const settingsBusinessEmail = document.getElementById('settings-business-email');
+                const settingsLogoInput = document.getElementById('settings-logo');
+                const settingsLogoPreview = document.getElementById('settings-logo-preview');
+                const removeLogoBtn = document.getElementById('remove-logo-btn');
+                const settingsTaxRate = document.getElementById('settings-tax-rate');
+                const settingsQuotePrefix = document.getElementById('settings-quote-prefix');
+                const settingsDefaultTerms = document.getElementById('settings-default-terms');
+                const settingsDefaultNotes = document.getElementById('settings-default-notes');
+
+                const exportDataBtn = document.getElementById('export-data-btn');
+                const importFileInput = document.getElementById('import-file-input');
+                const backupStatus = document.getElementById('backup-status');
+
+                // --- Utility Functions ---
+                const generateId = () => '_' + Math.random().toString(36).substr(2, 9);
+                const formatDate = (dateString) => {
+                    if (!dateString) return '';
+                    try {
+                        const date = new Date(dateString);
+                         // Add timezone offset to display the date as entered, not UTC
+                         const offset = date.getTimezoneOffset();
+                         // Check if date is valid before proceeding
+                         if (isNaN(date.getTime())) return '';
+                         const adjustedDate = new Date(date.getTime() + (offset*60*1000));
+                        return adjustedDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+                    } catch (e) {
+                        console.error("Error formatting date:", dateString, e);
+                        return ''; // Return empty string on error
+                    }
+                };
+                const formatCurrency = (amount) => {
+                    // Ensure amount is a number before formatting
+                    const numAmount = Number(amount);
+                    if (isNaN(numAmount)) {
+                        return '$0.00'; // Or some other default/error indicator
+                    }
+                    return numAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+                };
+                const sanitizeHTML = (str) => {
+                    // Basic sanitization: prevent script injection
+                    if (typeof str !== 'string') str = String(str); // Convert to string if not already
+                    const temp = document.createElement('div');
+                    temp.textContent = str;
+                    return temp.innerHTML;
+                };
+
+                // --- Data Persistence ---
+                const saveData = () => {
+                    try {
+                        localStorage.setItem(DB_KEY, JSON.stringify(appData));
+                        // console.log('Data saved:', appData);
+                    } catch (e) {
+                        console.error("Error saving data to localStorage:", e);
+                        alert("Error saving data. LocalStorage might be full or disabled.");
+                    }
+                };
+
+                const loadData = () => {
+                    const data = localStorage.getItem(DB_KEY);
+                    if (data) {
+                        try {
+                            const parsedData = JSON.parse(data);
+                            // Deep merge to preserve structure if new fields are added later
+                            appData = {
+                                ...appData, // Default structure
+                                ...parsedData, // Loaded data
+                                settings: { // Ensure settings object exists and merge
+                                    ...appData.settings,
+                                    ...(parsedData.settings || {})
+                                }
+                            };
+                            // Ensure arrays exist
+                            appData.clients = appData.clients || [];
+                            appData.quotes = appData.quotes || [];
+                            console.log('Data loaded:', appData);
+                        } catch (e) {
+                            console.error("Error parsing data from localStorage:", e);
+                            alert("Error loading data. Saved data might be corrupted. Attempting to load backup.");
+                            // Optionally try loading backup or reset
+                            if (!loadBackup()) {
+                                // If backup fails too, reset to default (or inform user)
+                                alert("Backup could not be loaded. Data may be lost.");
+                                // Reset to default structure might be needed here
+                            }
+                        }
+                    } else {
+                        console.log('No existing data found. Initializing.');
+                    }
+                };
+
+                 const saveBackup = () => {
+                    try {
+                        localStorage.setItem(BACKUP_KEY, JSON.stringify(appData));
+                        const now = new Date();
+                        if (backupStatus) { // Check if element exists
+                             backupStatus.textContent = `Last auto-backup: ${now.toLocaleTimeString()}`;
+                        }
+                        // console.log('Auto-backup saved.');
+                    } catch (e) {
+                        console.error("Error saving backup data:", e);
+                         if (backupStatus) {
+                            backupStatus.textContent = `Auto-backup failed at ${new Date().toLocaleTimeString()}`;
+                         }
+                    }
+                };
+
+                const loadBackup = () => {
+                     const backupData = localStorage.getItem(BACKUP_KEY);
+                     if (backupData) {
+                         try {
+                             const parsedBackup = JSON.parse(backupData);
+                             appData = { ...appData, ...parsedBackup, settings: { ...appData.settings, ...(parsedBackup.settings || {}) } };
+                             appData.clients = appData.clients || [];
+                             appData.quotes = appData.quotes || [];
+                             saveData(); // Save the restored backup as main data
+                             alert("Data restored from the last automatic backup.");
+                             console.log("Data restored from backup.");
+                             return true;
+                         } catch (e) {
+                             console.error("Error loading backup data:", e);
+                             alert("Could not restore from backup. Backup data might be corrupted.");
+                             return false;
+                         }
+                     } else {
+                        console.log("No backup data found to restore.");
+                        return false;
+                     }
+                 };
+
+                const startAutoBackup = () => {
+                    if (autoBackupTimer) clearInterval(autoBackupTimer); // Clear existing timer
+                    autoBackupTimer = setInterval(saveBackup, AUTO_BACKUP_INTERVAL);
+                    console.log('Auto-backup started.');
+                };
+
+                // --- Navigation ---
+                const setActivePage = (pageId) => {
+                    if (!pageId) return; // Prevent errors if pageId is null/undefined
+                    pages.forEach(page => page.classList.toggle('active', page.id === pageId));
+                    sidebarLinks.forEach(link => {
+                        link.classList.toggle('active', link.dataset.page === pageId);
+                    });
+                    // Reset forms when navigating away from quote page
+                    if (pageId !== 'new-quote-page' && quoteForm && quoteForm.dataset.dirty === 'true') {
+                        resetQuoteForm();
+                    }
+                    // Reset client modal if open
+                    if (pageId !== 'clients-page' && clientModal && !clientModal.classList.contains('hidden')) {
+                        closeClientModal();
+                    }
+                    // Reset client detail modal if open
+                    if (pageId !== 'clients-page' && clientDetailModal && !clientDetailModal.classList.contains('hidden')) {
+                        closeClientDetailModal();
+                    }
+                     // Hide preview page if navigating away
+                    if (pageId !== 'quote-preview-page' && quotePreviewPage && !quotePreviewPage.classList.contains('hidden')) {
+                        closeQuotePreview();
+                    }
+                };
+
+                sidebarLinks.forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const pageId = link.dataset.page;
+                        setActivePage(pageId);
+                        // Update URL hash for basic history/bookmarking
+                        try { // Prevent errors if history API is restricted
+                            window.location.hash = link.getAttribute('href');
+                        } catch (err) {
+                            console.warn("Could not set window hash:", err);
+                        }
+                    });
+                });
+
+                 // Handle hash changes (e.g., page refresh, back/forward)
+                const handleHashChange = () => {
+                    const hash = window.location.hash || '#clients'; // Default to clients
+                    const targetLink = document.querySelector(`.sidebar .nav-link[href="${hash}"]`);
+                    if (targetLink && targetLink.dataset.page) {
+                        setActivePage(targetLink.dataset.page);
+                    } else {
+                        setActivePage('clients-page'); // Fallback
+                    }
+                };
+
+
+                // --- Client Management ---
+                const renderClientsTable = (clientsToRender = appData.clients) => {
+                    if (!clientsTableBody) return; // Exit if table body not found
+                    clientsTableBody.innerHTML = ''; // Clear existing rows
+                    if (!clientsToRender || clientsToRender.length === 0) {
+                        clientsTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No clients found.</td></tr>';
+                        return;
+                    }
+                    clientsToRender.forEach(client => {
+                        const row = document.createElement('tr');
+                        // Ensure client properties exist or provide defaults
+                        const clientName = client.name || '[No Name]';
+                        const clientPhone = client.phone || '-';
+                        const clientEmail = client.email || '-';
+                        row.innerHTML = `
+                            <td data-label="Name">${sanitizeHTML(clientName)}</td>
+                            <td data-label="Phone">${sanitizeHTML(clientPhone)}</td>
+                            <td data-label="Email">${sanitizeHTML(clientEmail)}</td>
+                            <td data-label="Actions" class="action-buttons">
+                                <button class="btn-secondary btn-small view-client-btn" data-id="${client.id}">View</button>
+                                <button class="btn-warning btn-small edit-client-btn" data-id="${client.id}">Edit</button>
+                                <button class="btn-danger btn-small delete-client-btn" data-id="${client.id}">Delete</button>
+                            </td>
+                        `;
+                        clientsTableBody.appendChild(row);
+                    });
+                };
+
+                const openClientModal = (client = null) => {
+                    if (!clientModal || !clientForm) return;
+                    clientForm.reset();
+                    clientIdInput.value = ''; // Clear hidden ID
+                    if (client) {
+                        clientModalTitle.textContent = 'Edit Client';
+                        clientIdInput.value = client.id;
+                        clientNameInput.value = client.name || '';
+                        clientPhoneInput.value = client.phone || '';
+                        clientEmailInput.value = client.email || '';
+                        clientAddressInput.value = client.address || '';
+                        clientNotesInput.value = client.notes || '';
+                    } else {
+                        clientModalTitle.textContent = 'Add New Client';
+                    }
+                    clientModal.classList.remove('hidden');
+                    clientModal.style.display = 'flex'; // Ensure it's visible
+                };
+
+                const closeClientModal = () => {
+                    if (!clientModal || !clientForm) return;
+                    clientModal.classList.add('hidden');
+                    clientModal.style.display = 'none';
+                    clientForm.reset();
+                };
+
+                const saveClient = (e) => {
+                    e.preventDefault();
+                    if (!clientNameInput || !clientPhoneInput || !clientEmailInput || !clientAddressInput || !clientNotesInput || !clientIdInput) return;
+
+                    const clientId = clientIdInput.value;
+                    const clientData = {
+                        id: clientId || generateId(),
+                        name: clientNameInput.value.trim(),
+                        phone: clientPhoneInput.value.trim(),
+                        email: clientEmailInput.value.trim(),
+                        address: clientAddressInput.value.trim(),
+                        notes: clientNotesInput.value.trim()
+                    };
+
+                    if (!clientData.name) {
+                        alert('Client name is required.');
+                        return;
+                    }
+
+                    if (clientId) {
+                        // Edit existing client
+                        const index = appData.clients.findIndex(c => c.id === clientId);
+                        if (index > -1) {
+                            appData.clients[index] = clientData;
+                        } else {
+                            // If index not found, maybe add as new? Or log error.
+                            console.error("Client ID not found for editing:", clientId);
+                            appData.clients.push(clientData); // Add as new as fallback
+                        }
+                    } else {
+                        // Add new client
+                        appData.clients.push(clientData);
+                    }
+
+                    saveData();
+                    renderClientsTable();
+                    populateClientSelect(); // Update client dropdown in quote form
+                    closeClientModal();
+                };
+
+                const deleteClient = (clientId) => {
+                    if (!clientId) return;
+                    if (!confirm('Are you sure you want to delete this client? This will also remove their association from existing quotes (but not delete the quotes themselves).')) {
+                        return;
+                    }
+                    // Remove client
+                    appData.clients = appData.clients.filter(c => c.id !== clientId);
+                    // Optional: Update quotes to remove reference to deleted client
+                    appData.quotes.forEach(quote => {
+                        if (quote.clientId === clientId) {
+                            quote.clientId = null; // Or set to a placeholder ID/name
+                            quote.clientName = '[Deleted Client]'; // Indicate client was removed
+                        }
+                    });
+                    saveData();
+                    renderClientsTable();
+                    renderQuotesTable(); // Re-render quotes in case client names changed
+                    populateClientSelect();
+                };
+
+                const filterClients = () => {
+                    if (!clientSearchInput) return;
+                    const searchTerm = clientSearchInput.value.toLowerCase().trim();
+                    if (!searchTerm) {
+                        renderClientsTable(appData.clients);
+                        return;
+                    }
+                    const filteredClients = appData.clients.filter(client =>
+                        client.name?.toLowerCase().includes(searchTerm) || // Add null checks
+                        client.phone?.toLowerCase().includes(searchTerm) ||
+                        client.email?.toLowerCase().includes(searchTerm)
+                    );
+                    renderClientsTable(filteredClients);
+                };
+
+                 const openClientDetailModal = (clientId) => {
+                    if (!clientDetailModal || !clientId) return;
+                    const client = appData.clients.find(c => c.id === clientId);
+                    if (!client) return;
+
+                    // Ensure detail elements exist before setting textContent
+                    if (clientDetailName) clientDetailName.textContent = client.name || '[No Name]';
+                    if (clientDetailPhone) clientDetailPhone.textContent = client.phone || 'N/A';
+                    if (clientDetailEmail) clientDetailEmail.textContent = client.email || 'N/A';
+                    if (clientDetailAddress) clientDetailAddress.textContent = client.address || 'N/A';
+                    if (clientDetailNotes) clientDetailNotes.textContent = client.notes || 'N/A';
+                    // Store client ID on the modal title element for reference if needed (e.g., when deleting quotes from this view)
+                    if (clientDetailName) clientDetailName.dataset.clientId = clientId;
+
+
+                    // Find and display quotes for this client
+                    const clientQuotes = appData.quotes.filter(q => q.clientId === clientId)
+                                                .sort((a, b) => { // Add error handling for date sorting
+                                                     const dateA = new Date(a.date);
+                                                     const dateB = new Date(b.date);
+                                                     if (isNaN(dateA.getTime())) return 1; // Invalid dates go last
+                                                     if (isNaN(dateB.getTime())) return -1;
+                                                     return dateB - dateA; // Sort newest first
+                                                });
+
+                    if (!clientDetailQuotesTableBody) return; // Check table body exists
+                    clientDetailQuotesTableBody.innerHTML = '';
+                    if (clientQuotes.length === 0) {
+                        clientDetailQuotesTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No quotes found for this client.</td></tr>';
+                    } else {
+                        clientQuotes.forEach(quote => {
+                            const row = document.createElement('tr');
+                            const quoteNumber = quote.number || '[No Number]';
+                            const quoteDate = formatDate(quote.date);
+                            const quoteTotal = formatCurrency(quote.total);
+                            const quoteStatus = quote.status || 'Draft'; // Default status
+                            row.innerHTML = `
+                                <td data-label="Quote #">${sanitizeHTML(quoteNumber)}</td>
+                                <td data-label="Date">${quoteDate}</td>
+                                <td data-label="Total">${quoteTotal}</td>
+                                <td data-label="Status"><span class="status-badge status-${quoteStatus.toLowerCase()}">${sanitizeHTML(quoteStatus)}</span></td>
+                                <td data-label="Actions" class="action-buttons">
+                                    <button class="btn-secondary btn-small view-quote-btn" data-id="${quote.id}">View/Edit</button>
+                                </td>
+                            `;
+                            clientDetailQuotesTableBody.appendChild(row);
+                        });
+                    }
+
+                    clientDetailModal.classList.remove('hidden');
+                    clientDetailModal.style.display = 'flex';
+                };
+
+                const closeClientDetailModal = () => {
+                    if (!clientDetailModal) return;
+                    clientDetailModal.classList.add('hidden');
+                    clientDetailModal.style.display = 'none';
+                };
+
+                // --- Quote Management ---
+                const populateClientSelect = () => {
+                    if (!quoteClientSelect) return; // Check if select exists
+                    const currentVal = quoteClientSelect.value; // Preserve selection if possible
+                    quoteClientSelect.innerHTML = '<option value="">Select Client...</option>';
+                    appData.clients.sort((a, b) => (a.name || '').localeCompare(b.name || '')).forEach(client => {
+                        const option = document.createElement('option');
+                        option.value = client.id;
+                        option.textContent = client.name || '[No Name]';
+                        quoteClientSelect.appendChild(option);
+                    });
+                    // Try to restore previous selection
+                    if (appData.clients.some(c => c.id === currentVal)) {
+                        quoteClientSelect.value = currentVal;
+                    }
+                };
+
+                const getNextQuoteNumber = () => {
+                    const prefix = appData.settings.quotePrefix || 'Q-';
+                    const number = appData.settings.nextQuoteNumber || 1;
+                    // Simple padding (e.g., Q-001)
+                    const paddedNumber = String(number).padStart(3, '0');
+                    return `${prefix}${paddedNumber}`;
+                };
+
+                const incrementQuoteNumber = () => {
+                    appData.settings.nextQuoteNumber = (appData.settings.nextQuoteNumber || 1) + 1;
+                    // No need to call saveData() here, it happens when the quote itself is saved.
+                };
+
+                const renderQuotesTable = () => {
+                    if (!quotesTableBody) return; // Check if table body exists
+                    quotesTableBody.innerHTML = ''; // Clear existing rows
+                     const sortedQuotes = [...appData.quotes].sort((a, b) => { // Add error handling for date sorting
+                         const dateA = new Date(a.date);
+                         const dateB = new Date(b.date);
+                         if (isNaN(dateA.getTime())) return 1; // Invalid dates go last
+                         if (isNaN(dateB.getTime())) return -1;
+                         return dateB - dateA; // Show newest first
+                     });
+
+                    if (sortedQuotes.length === 0) {
+                        quotesTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No quotes found.</td></tr>';
+                        return;
+                    }
+                    sortedQuotes.forEach(quote => {
+                        const client = appData.clients.find(c => c.id === quote.clientId);
+                        const clientName = client ? client.name : (quote.clientName || '[Client Not Found]');
+                        const row = document.createElement('tr');
+                        const quoteNumber = quote.number || '[No Number]';
+                        const quoteDate = formatDate(quote.date);
+                        const quoteTotal = formatCurrency(quote.total);
+                        const quoteStatus = quote.status || 'Draft'; // Default status
+                        row.innerHTML = `
+                            <td data-label="Quote #">${sanitizeHTML(quoteNumber)}</td>
+                            <td data-label="Client">${sanitizeHTML(clientName)}</td>
+                            <td data-label="Date">${quoteDate}</td>
+                            <td data-label="Total">${quoteTotal}</td>
+                            <td data-label="Status"><span class="status-badge status-${quoteStatus.toLowerCase()}">${sanitizeHTML(quoteStatus)}</span></td>
+                            <td data-label="Actions" class="action-buttons">
+                                <button class="btn-secondary btn-small view-quote-btn" data-id="${quote.id}">View/Edit</button>
+                                <button class="btn-warning btn-small duplicate-quote-btn" data-id="${quote.id}">Duplicate</button>
+                                <button class="btn-danger btn-small delete-quote-btn" data-id="${quote.id}">Delete</button>
+                            </td>
+                        `;
+                        quotesTableBody.appendChild(row);
+                    });
+                };
+
+                const addQuoteItemRow = (item = { description: '', quantity: 1, unitPrice: 0 }) => {
+                    if (!quoteItemsTableBody) return; // Check if table body exists
+                    const row = document.createElement('tr');
+                    const itemId = generateId(); // Unique ID for the row/item
+                    row.dataset.itemId = itemId;
+                    // Ensure item properties exist
+                    const itemDesc = item.description || '';
+                    const itemQty = item.quantity ?? 1; // Default to 1 if null/undefined
+                    const itemPrice = item.unitPrice ?? 0; // Default to 0
+
+                    row.innerHTML = `
+                        <td data-label="Description">
+                            <textarea class="item-description" required placeholder="Service or item description">${sanitizeHTML(itemDesc)}</textarea>
+                        </td>
+                        <td data-label="Quantity">
+                            <input type="number" class="item-quantity" value="${itemQty}" min="0" step="any" required>
+                        </td>
+                        <td data-label="Unit Price">
+                            <input type="number" class="item-unit-price" value="${itemPrice}" min="0" step="0.01" required>
+                        </td>
+                        <td data-label="Line Total" class="item-line-total">${formatCurrency(itemQty * itemPrice)}</td>
+                        <td data-label="Actions">
+                            <button type="button" class="btn-danger btn-small remove-quote-item-btn">Remove</button>
+                        </td>
+                    `;
+                    quoteItemsTableBody.appendChild(row);
+
+                    // Add event listeners for the new row inputs
+                    const qtyInput = row.querySelector('.item-quantity');
+                    const priceInput = row.querySelector('.item-unit-price');
+                    const removeBtn = row.querySelector('.remove-quote-item-btn');
+                    const descInput = row.querySelector('.item-description');
+
+                    if (qtyInput) qtyInput.addEventListener('input', updateQuoteTotals);
+                    if (priceInput) priceInput.addEventListener('input', updateQuoteTotals);
+                    if (removeBtn) removeBtn.addEventListener('click', () => {
+                        row.remove();
+                        updateQuoteTotals();
+                        markQuoteFormDirty();
+                    });
+                    if (descInput) descInput.addEventListener('input', markQuoteFormDirty);
+
+                     markQuoteFormDirty(); // Mark form as dirty when adding a row
+                };
+
+                const updateQuoteTotals = () => {
+                    // Check if elements exist before updating
+                    if (!quoteItemsTableBody || !quoteSubtotalSpan || !quoteTaxRateSpan || !quoteTaxAmountSpan || !quoteTotalSpan) return;
+
+                    let subtotal = 0;
+                    const itemRows = quoteItemsTableBody.querySelectorAll('tr');
+                    itemRows.forEach(row => {
+                        const quantityInput = row.querySelector('.item-quantity');
+                        const unitPriceInput = row.querySelector('.item-unit-price');
+                        const lineTotalCell = row.querySelector('.item-line-total');
+
+                        const quantity = parseFloat(quantityInput?.value) || 0;
+                        const unitPrice = parseFloat(unitPriceInput?.value) || 0;
+                        const lineTotal = quantity * unitPrice;
+
+                        if(lineTotalCell) lineTotalCell.textContent = formatCurrency(lineTotal);
+                        subtotal += lineTotal;
+                    });
+
+                    const taxRate = parseFloat(appData.settings.taxRate) || 0;
+                    const taxAmount = subtotal * (taxRate / 100);
+                    const total = subtotal + taxAmount;
+
+                    quoteSubtotalSpan.textContent = formatCurrency(subtotal);
+                    quoteTaxRateSpan.textContent = taxRate;
+                    quoteTaxAmountSpan.textContent = formatCurrency(taxAmount);
+                    quoteTotalSpan.textContent = formatCurrency(total);
+
+                    markQuoteFormDirty(); // Mark form as dirty whenever totals change
+                };
+
+                const markQuoteFormDirty = () => {
+                    if (quoteForm) quoteForm.dataset.dirty = 'true';
+                };
+
+                const resetQuoteForm = () => {
+                    if (!quoteForm || !quoteIdInput || !quoteNumberHiddenInput || !quoteItemsTableBody || !quotePageTitle || !saveQuoteBtn || !quoteDateInput || !quoteStatusSelect || !quoteTermsInput || !quoteNotesInput) return;
+
+                    quoteForm.reset();
+                    quoteIdInput.value = '';
+                    quoteNumberHiddenInput.value = '';
+                    quoteItemsTableBody.innerHTML = ''; // Clear items
+                    quotePageTitle.textContent = 'Create New Quote';
+                    saveQuoteBtn.textContent = 'Save Quote';
+                    quoteDateInput.value = new Date().toISOString().split('T')[0]; // Set today's date
+                    quoteStatusSelect.value = 'Draft'; // Default status
+                    // Apply default terms/notes from settings
+                    quoteTermsInput.value = appData.settings.defaultTerms || '';
+                    quoteNotesInput.value = appData.settings.defaultNotes || '';
+                    addQuoteItemRow(); // Add one empty item row
+                    updateQuoteTotals(); // Calculate initial totals (should be 0)
+                    populateClientSelect(); // Ensure client list is up-to-date
+                    quoteForm.dataset.dirty = 'false'; // Reset dirty flag
+                };
+
+                const loadQuoteIntoForm = (quoteId, isDuplicate = false) => {
+                    if (!quoteId) return;
+                    const quote = appData.quotes.find(q => q.id === quoteId);
+                    if (!quote) {
+                        alert('Quote not found!');
+                        return;
+                    }
+
+                    // Ensure form elements exist before proceeding
+                     if (!quoteForm || !quoteIdInput || !quoteNumberHiddenInput || !quoteItemsTableBody || !quotePageTitle || !saveQuoteBtn || !quoteDateInput || !quoteStatusSelect || !quoteTermsInput || !quoteNotesInput || !quoteClientSelect) return;
+
+
+                    resetQuoteForm(); // Start with a clean slate
+
+                    if (isDuplicate) {
+                        quotePageTitle.textContent = 'Duplicate Quote';
+                        quoteIdInput.value = ''; // New ID will be generated on save
+                        quoteNumberHiddenInput.value = ''; // New number will be generated
+                        quoteDateInput.value = new Date().toISOString().split('T')[0]; // Today's date for duplicate
+                        quoteStatusSelect.value = 'Draft'; // Reset status to Draft
+                        saveQuoteBtn.textContent = 'Save as New Quote';
+                    } else {
+                        quotePageTitle.textContent = `Edit Quote #${quote.number || '[No Number]'}`;
+                        quoteIdInput.value = quote.id;
+                        quoteNumberHiddenInput.value = quote.number || ''; // Store original number
+                        quoteDateInput.value = quote.date || new Date().toISOString().split('T')[0]; // Fallback date
+                        quoteStatusSelect.value = quote.status || 'Draft';
+                        saveQuoteBtn.textContent = 'Update Quote';
+                    }
+
+                    quoteClientSelect.value = quote.clientId || '';
+                    quoteTermsInput.value = quote.terms || '';
+                    quoteNotesInput.value = quote.notes || '';
+
+                    quoteItemsTableBody.innerHTML = ''; // Clear default empty row
+                    if (quote.items && quote.items.length > 0) {
+                         quote.items.forEach(item => addQuoteItemRow(item));
+                    } else {
+                        addQuoteItemRow(); // Add one empty row if quote had no items
+                    }
+
+                    updateQuoteTotals(); // Recalculate totals based on loaded data
+                    setActivePage('new-quote-page');
+                    quoteForm.dataset.dirty = 'false'; // Not dirty initially after loading
+                };
+
+                const saveQuote = (e) => {
+                    e.preventDefault();
+                     // Ensure form elements exist
+                    if (!quoteIdInput || !quoteClientSelect || !quoteItemsTableBody || !quoteDateInput || !quoteStatusSelect || !quoteTermsInput || !quoteNotesInput) return;
+
+                    const quoteId = quoteIdInput.value;
+                    const clientId = quoteClientSelect.value;
+                    const items = [];
+                    let formIsValid = true;
+
+                    quoteItemsTableBody.querySelectorAll('tr').forEach(row => {
+                        if (!formIsValid) return; // Skip remaining rows if already invalid
+
+                        const descriptionInput = row.querySelector('.item-description');
+                        const quantityInput = row.querySelector('.item-quantity');
+                        const unitPriceInput = row.querySelector('.item-unit-price');
+
+                        // Check if inputs were found
+                        if (!descriptionInput || !quantityInput || !unitPriceInput) {
+                            console.error("Could not find item input elements in row:", row);
+                            alert("An error occurred reading quote items. Please check console.");
+                            formIsValid = false;
+                            return;
+                        }
+
+                        const description = descriptionInput.value.trim();
+                        const quantity = parseFloat(quantityInput.value);
+                        const unitPrice = parseFloat(unitPriceInput.value);
+
+                         // Basic validation for item rows
+                        if (!description) {
+                            alert('Item description cannot be empty.');
+                            descriptionInput.focus();
+                            formIsValid = false;
+                            return;
+                        }
+                         if (isNaN(quantity) || quantity < 0) {
+                            alert('Item quantity must be a non-negative number.');
+                            quantityInput.focus();
+                            formIsValid = false;
+                            return;
+                        }
+                        if (isNaN(unitPrice) || unitPrice < 0) {
+                            alert('Item unit price must be a non-negative number.');
+                            unitPriceInput.focus();
+                            formIsValid = false;
+                            return;
+                        }
+
+                        if (formIsValid) { // Only add if valid so far
+                            items.push({
+                                description,
+                                quantity,
+                                unitPrice
+                            });
+                        }
+                    });
+
+                     if (!formIsValid) return; // Stop if any item row was invalid
+
+                    if (!clientId) {
+                        alert('Please select a client.');
+                        quoteClientSelect.focus();
+                        return;
+                    }
+                    if (items.length === 0) {
+                        alert('Please add at least one item to the quote.');
+                        if (addQuoteItemBtn) addQuoteItemBtn.focus(); // Focus add item button if available
+                        return;
+                    }
+
+                    // Recalculate final totals server-side (well, "JS-side")
+                    let subtotal = 0;
+                    items.forEach(item => { subtotal += (item.quantity || 0) * (item.unitPrice || 0); }); // Add checks for NaN
+                    const taxRate = parseFloat(appData.settings.taxRate) || 0;
+                    const taxAmount = subtotal * (taxRate / 100);
+                    const total = subtotal + taxAmount;
+
+                    const clientName = appData.clients.find(c => c.id === clientId)?.name || '[Unknown Client]';
+                    const quoteNumber = quoteId ? quoteNumberHiddenInput.value : getNextQuoteNumber();
+
+                    const quoteData = {
+                        id: quoteId || generateId(),
+                        number: quoteNumber, // Use existing or generate new
+                        clientId: clientId,
+                        clientName: clientName, // Store name for convenience
+                        date: quoteDateInput.value,
+                        status: quoteStatusSelect.value,
+                        items: items,
+                        terms: quoteTermsInput.value.trim(),
+                        notes: quoteNotesInput.value.trim(),
+                        subtotal: subtotal,
+                        taxRate: taxRate,
+                        taxAmount: taxAmount,
+                        total: total
+                    };
+
+                    if (quoteId) {
+                        // Edit existing quote
+                        const index = appData.quotes.findIndex(q => q.id === quoteId);
+                        if (index > -1) {
+                            appData.quotes[index] = quoteData;
+                        } else {
+                            console.error("Quote ID not found for editing:", quoteId);
+                            appData.quotes.push(quoteData); // Add as new as fallback
+                        }
+                    } else {
+                        // Add new quote
+                        appData.quotes.push(quoteData);
+                        incrementQuoteNumber(); // Increment only when adding a *new* quote
+                    }
+
+                    saveData();
+                    renderQuotesTable();
+                    resetQuoteForm(); // Clear form after saving
+                    setActivePage('quotes-page'); // Go back to quotes list
+                };
+
+                const deleteQuote = (quoteId) => {
+                    if (!quoteId) return;
+                    if (!confirm('Are you sure you want to delete this quote? This action cannot be undone.')) {
+                        return;
+                    }
+                    appData.quotes = appData.quotes.filter(q => q.id !== quoteId);
+                    saveData();
+                    renderQuotesTable();
+                     // If deleting from client detail view, refresh it
+                    if (clientDetailModal && !clientDetailModal.classList.contains('hidden')) {
+                        const visibleClientId = clientDetailName?.dataset.clientId; // Check if clientDetailName exists
+                        if(visibleClientId) openClientDetailModal(visibleClientId);
+                    }
+                };
+
+                // --- Quote Preview & Print ---
+                const generateQuotePreview = () => {
+                    // Check required elements exist
+                    if (!quoteClientSelect || !quoteItemsTableBody || !quoteDateInput || !quoteStatusSelect || !quoteTermsInput || !quoteNotesInput || !quotePreviewPage || !previewBusinessLogo || !previewBusinessName || !previewBusinessAddress || !previewBusinessPhone || !previewBusinessEmail || !previewQuoteNumber || !previewQuoteDate || !previewQuoteStatus || !previewClientName || !previewClientAddress || !previewClientPhone || !previewClientEmail || !previewItemsTableBody || !previewSubtotal || !previewTaxRate || !previewTaxAmount || !previewTotal || !previewTerms || !previewNotes) {
+                         console.error("One or more preview elements are missing.");
+                         alert("Error generating preview. Check console.");
+                         return;
+                    }
+
+                    // 1. Get data from the current form state
+                    const clientId = quoteClientSelect.value;
+                    const client = appData.clients.find(c => c.id === clientId);
+                    const items = [];
+                     quoteItemsTableBody.querySelectorAll('tr').forEach(row => {
+                         const descInput = row.querySelector('.item-description');
+                         const qtyInput = row.querySelector('.item-quantity');
+                         const priceInput = row.querySelector('.item-unit-price');
+                         items.push({
+                             description: descInput?.value.trim() || '',
+                             quantity: parseFloat(qtyInput?.value) || 0,
+                             unitPrice: parseFloat(priceInput?.value) || 0,
+                         });
+                     });
+
+                    // Recalculate totals for preview
+                    let subtotal = 0;
+                    items.forEach(item => { subtotal += (item.quantity || 0) * (item.unitPrice || 0); });
+                    const taxRate = parseFloat(appData.settings.taxRate) || 0;
+                    const taxAmount = subtotal * (taxRate / 100);
+                    const total = subtotal + taxAmount;
+
+                    // 2. Populate Preview Elements
+                    // Business Info
+                    previewBusinessLogo.src = appData.settings.logoDataUrl || 'https://placehold.co/150x80/e2e8f0/adb5bd?text=Your+Logo';
+                    previewBusinessLogo.onerror = () => { previewBusinessLogo.src = 'https://placehold.co/150x80/e2e8f0/adb5bd?text=Logo+Error'; }; // Basic fallback
+                    previewBusinessName.textContent = appData.settings.businessName || '[Business Name]';
+                    previewBusinessAddress.textContent = appData.settings.businessAddress || '[Business Address]';
+                    previewBusinessPhone.textContent = appData.settings.businessPhone || '[Phone]';
+                    previewBusinessEmail.textContent = appData.settings.businessEmail || '[Email]';
+
+                    // Quote Meta
+                    // Use hidden input if editing, otherwise generate next number for preview
+                    previewQuoteNumber.textContent = quoteIdInput.value ? (quoteNumberHiddenInput.value || '[No Number]') : getNextQuoteNumber();
+                    previewQuoteDate.textContent = formatDate(quoteDateInput.value);
+                    previewQuoteStatus.textContent = quoteStatusSelect.options[quoteStatusSelect.selectedIndex]?.text || quoteStatusSelect.value; // Get text label or value as fallback
+
+                    // Client Info
+                    if (client) {
+                        previewClientName.textContent = client.name || '[No Name]';
+                        previewClientAddress.textContent = client.address || 'N/A';
+                        previewClientPhone.textContent = client.phone || 'N/A';
+                        previewClientEmail.textContent = client.email || 'N/A';
+                    } else {
+                         previewClientName.textContent = '[Client Not Selected]';
+                         previewClientAddress.textContent = '';
+                         previewClientPhone.textContent = '';
+                         previewClientEmail.textContent = '';
+                    }
+
+                     // Items Table
+                    previewItemsTableBody.innerHTML = ''; // Clear previous items
+                    items.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${sanitizeHTML(item.description)}</td>
+                            <td>${item.quantity}</td>
+                            <td>${formatCurrency(item.unitPrice)}</td>
+                            <td>${formatCurrency((item.quantity || 0) * (item.unitPrice || 0))}</td>
+                        `;
+                        previewItemsTableBody.appendChild(row);
+                    });
+
+                     // Totals
+                    previewSubtotal.textContent = formatCurrency(subtotal);
+                    previewTaxRate.textContent = taxRate;
+                    previewTaxAmount.textContent = formatCurrency(taxAmount);
+                    previewTotal.textContent = formatCurrency(total);
+
+                    // Terms & Notes
+                    previewTerms.textContent = quoteTermsInput.value.trim() || 'N/A';
+                    previewNotes.textContent = quoteNotesInput.value.trim() || 'N/A';
+
+                    // 3. Show the preview page
+                    setActivePage('quote-preview-page');
+                };
+
+                const closeQuotePreview = () => {
+                    setActivePage('new-quote-page'); // Go back to the quote form
+                };
+
+                const printQuote = () => {
+                    window.print();
+                };
+
+                // --- Settings ---
+                const loadSettings = () => {
+                    // Check if settings elements exist
+                    if (!settingsBusinessName || !settingsBusinessAddress || !settingsBusinessPhone || !settingsBusinessEmail || !settingsTaxRate || !settingsQuotePrefix || !settingsDefaultTerms || !settingsDefaultNotes || !settingsLogoPreview || !quoteTaxRateSpan) {
+                         console.error("One or more settings elements are missing.");
+                         return;
+                    }
+                    const s = appData.settings;
+                    settingsBusinessName.value = s.businessName || '';
+                    settingsBusinessAddress.value = s.businessAddress || '';
+                    settingsBusinessPhone.value = s.businessPhone || '';
+                    settingsBusinessEmail.value = s.businessEmail || '';
+                    settingsTaxRate.value = s.taxRate || 0;
+                    settingsQuotePrefix.value = s.quotePrefix || 'Q-';
+                    settingsDefaultTerms.value = s.defaultTerms || '';
+                    settingsDefaultNotes.value = s.defaultNotes || '';
+
+                    // Load logo preview
+                    if (s.logoDataUrl) {
+                        settingsLogoPreview.src = s.logoDataUrl;
+                        settingsLogoPreview.onerror = () => { settingsLogoPreview.src = 'https://placehold.co/150x100/e2e8f0/adb5bd?text=Logo+Error'; };
+                    } else {
+                        settingsLogoPreview.src = 'https://placehold.co/150x100/e2e8f0/adb5bd?text=No+Logo';
+                    }
+
+                    // Update tax rate display on quote form
+                    quoteTaxRateSpan.textContent = s.taxRate || 0;
+                };
+
+                const saveSettings = (e) => {
+                    e.preventDefault();
+                    // Check if settings elements exist
+                    if (!settingsBusinessName || !settingsBusinessAddress || !settingsBusinessPhone || !settingsBusinessEmail || !settingsTaxRate || !settingsQuotePrefix || !settingsDefaultTerms || !settingsDefaultNotes) {
+                         console.error("One or more settings elements are missing during save.");
+                         alert("Error saving settings. Check console.");
+                         return;
+                    }
+
+                    appData.settings.businessName = settingsBusinessName.value.trim();
+                    appData.settings.businessAddress = settingsBusinessAddress.value.trim();
+                    appData.settings.businessPhone = settingsBusinessPhone.value.trim();
+                    appData.settings.businessEmail = settingsBusinessEmail.value.trim();
+                    // Logo is saved via file input handler
+                    appData.settings.taxRate = parseFloat(settingsTaxRate.value) || 0;
+                    appData.settings.quotePrefix = settingsQuotePrefix.value.trim() || 'Q-';
+                    appData.settings.defaultTerms = settingsDefaultTerms.value.trim();
+                    appData.settings.defaultNotes = settingsDefaultNotes.value.trim();
+
+                     // Ensure nextQuoteNumber is initialized if it wasn't before
+                     if (typeof appData.settings.nextQuoteNumber !== 'number' || appData.settings.nextQuoteNumber < 1) {
+                         appData.settings.nextQuoteNumber = 1;
+                     }
+
+                    saveData();
+                    loadSettings(); // Reload to confirm changes and update UI elements like tax rate display
+                    updateQuoteTotals(); // Recalculate quote totals if tax rate changed
+                    alert('Settings saved successfully.');
+                };
+
+                const handleLogoUpload = (event) => {
+                    if (!settingsLogoInput || !settingsLogoPreview) return; // Check elements exist
+                    const file = event.target.files?.[0]; // Optional chaining for files array
+                    if (!file) return;
+
+                    if (file.size > 1 * 1024 * 1024) { // Limit logo size (e.g., 1MB)
+                        alert('Logo file is too large. Please choose a file smaller than 1MB.');
+                        settingsLogoInput.value = ''; // Clear the input
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        if (typeof reader.result === 'string') { // Ensure result is string (Data URL)
+                            appData.settings.logoDataUrl = reader.result;
+                            settingsLogoPreview.src = reader.result;
+                            // Save immediately after successful load
+                            saveData();
+                            alert('Logo updated. Remember to save other settings if changed.');
+                        } else {
+                             alert('Failed to read logo file as Data URL.');
+                        }
+                    };
+                    reader.onerror = () => {
+                        alert('Error reading logo file.');
+                        appData.settings.logoDataUrl = null; // Clear on error
+                        settingsLogoPreview.src = 'https://placehold.co/150x100/e2e8f0/adb5bd?text=No+Logo';
+                        saveData();
+                    };
+                    reader.readAsDataURL(file);
+                };
+
+                 const removeLogo = () => {
+                    if (!settingsLogoPreview || !settingsLogoInput) return; // Check elements exist
+                    if (confirm('Are you sure you want to remove the logo?')) {
+                        appData.settings.logoDataUrl = null;
+                        settingsLogoPreview.src = 'https://placehold.co/150x100/e2e8f0/adb5bd?text=No+Logo';
+                        settingsLogoInput.value = ''; // Clear the file input
+                        saveData();
+                        alert('Logo removed.');
+                    }
+                };
+
+                // --- Backup & Restore ---
+                const exportData = () => {
+                    if (!backupStatus) return; // Check element exists
+                    try {
+                        const dataStr = JSON.stringify(appData, null, 2); // Pretty print JSON
+                        const blob = new Blob([dataStr], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+                        link.download = `crm_quote_app_backup_${timestamp}.json`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        backupStatus.textContent = 'Data exported successfully.';
+                    } catch (error) {
+                        console.error("Export failed:", error);
+                        alert("Failed to export data.");
+                        backupStatus.textContent = 'Data export failed.';
+                    }
+                };
+
+                const importData = (event) => {
+                    if (!importFileInput || !backupStatus) return; // Check elements exist
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+
+                    if (!confirm('WARNING: Importing data will overwrite all current clients, quotes, and settings. Are you sure you want to proceed?')) {
+                        importFileInput.value = ''; // Clear the input
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const fileContent = e.target?.result;
+                            if (typeof fileContent !== 'string') {
+                                throw new Error("Could not read file content.");
+                            }
+                            const importedData = JSON.parse(fileContent);
+
+                            // Basic validation of imported structure
+                            if (typeof importedData === 'object' && importedData !== null &&
+                                Array.isArray(importedData.clients) &&
+                                Array.isArray(importedData.quotes) &&
+                                typeof importedData.settings === 'object')
+                            {
+                                // Overwrite existing data
+                                appData = {
+                                    clients: importedData.clients || [],
+                                    quotes: importedData.quotes || [],
+                                    settings: { // Merge with defaults to ensure all keys exist
+                                         businessName: '', businessAddress: '', businessPhone: '', businessEmail: '',
+                                         logoDataUrl: null, taxRate: 0, quotePrefix: 'Q-', nextQuoteNumber: 1,
+                                         defaultTerms: '', defaultNotes: '',
+                                         ...(importedData.settings || {}) // Overwrite with imported settings
+                                    }
+                                };
+
+                                // Ensure nextQuoteNumber is valid after import
+                                if (typeof appData.settings.nextQuoteNumber !== 'number' || appData.settings.nextQuoteNumber < 1) {
+                                    // Try to determine next number from existing quotes if necessary
+                                    const maxQuoteNum = appData.quotes.reduce((max, q) => {
+                                        if (!q || typeof q.number !== 'string') return max; // Check quote and number exist
+                                        const prefix = appData.settings.quotePrefix || 'Q-';
+                                        const numPart = q.number.startsWith(prefix) ? q.number.substring(prefix.length) : q.number; // Handle prefix
+                                        const num = parseInt(numPart, 10);
+                                        return (!isNaN(num) && num > max) ? num : max;
+                                    }, 0);
+                                    appData.settings.nextQuoteNumber = maxQuoteNum + 1;
+                                }
+
+
+                                saveData(); // Save the newly imported data
+                                // Reload everything
+                                initialize(); // Re-initialize the app state and UI
+                                setActivePage('clients-page'); // Go to a default page
+                                alert('Data imported successfully!');
+                                backupStatus.textContent = 'Data imported successfully.';
+                            } else {
+                                throw new Error("Invalid data structure in JSON file.");
+                            }
+                        } catch (error) {
+                            console.error("Import failed:", error);
+                            alert(`Failed to import data. Please ensure the file is a valid JSON backup created by this app. Error: ${error.message}`);
+                            backupStatus.textContent = 'Data import failed.';
+                        } finally {
+                            importFileInput.value = ''; // Clear the input
+                        }
+                    };
+                    reader.onerror = () => {
+                         alert('Error reading import file.');
+                         backupStatus.textContent = 'Error reading import file.';
+                         importFileInput.value = ''; // Clear the input
+                    };
+                    reader.readAsText(file);
+                };
+
+
+                // --- Event Listeners Setup ---
+                // Wrap listener attachments in checks to ensure elements exist
+                if (addClientBtn) addClientBtn.addEventListener('click', () => openClientModal());
+                if (cancelClientBtn) cancelClientBtn.addEventListener('click', closeClientModal);
+                if (clientForm) clientForm.addEventListener('submit', saveClient);
+                if (clientSearchInput) clientSearchInput.addEventListener('input', filterClients);
+                if (closeClientDetailBtn) closeClientDetailBtn.addEventListener('click', closeClientDetailModal);
+
+                // Event delegation for client table buttons
+                if (clientsTableBody) clientsTableBody.addEventListener('click', (e) => {
+                    if (e.target && e.target.classList.contains('edit-client-btn')) {
+                        const clientId = e.target.dataset.id;
+                        const client = appData.clients.find(c => c.id === clientId);
+                        if (client) openClientModal(client);
+                    } else if (e.target && e.target.classList.contains('delete-client-btn')) {
+                        const clientId = e.target.dataset.id;
+                        deleteClient(clientId);
+                    } else if (e.target && e.target.classList.contains('view-client-btn')) {
+                        const clientId = e.target.dataset.id;
+                         openClientDetailModal(clientId);
+                    }
+                });
+
+                 // Event delegation for client detail quote view buttons
+                if (clientDetailQuotesTableBody) clientDetailQuotesTableBody.addEventListener('click', (e) => {
+                     if (e.target && e.target.classList.contains('view-quote-btn')) {
+                         const quoteId = e.target.dataset.id;
+                         closeClientDetailModal(); // Close detail view first
+                         loadQuoteIntoForm(quoteId);
+                     }
+                 });
+
+
+                if (addQuoteBtn) addQuoteBtn.addEventListener('click', () => {
+                    resetQuoteForm();
+                    setActivePage('new-quote-page');
+                });
+                if (addQuoteItemBtn) addQuoteItemBtn.addEventListener('click', () => addQuoteItemRow());
+                if (cancelQuoteBtn) cancelQuoteBtn.addEventListener('click', () => {
+                     if (quoteForm?.dataset.dirty === 'true') { // Check if quoteForm exists
+                         if (!confirm('You have unsaved changes. Are you sure you want to cancel and discard them?')) {
+                             return;
+                         }
+                     }
+                    resetQuoteForm();
+                    setActivePage('quotes-page'); // Or previous page? Quotes list seems logical.
+                });
+                if (quoteForm) quoteForm.addEventListener('submit', saveQuote);
+                if (previewQuoteBtn) previewQuoteBtn.addEventListener('click', generateQuotePreview);
+                if (closePreviewBtn) closePreviewBtn.addEventListener('click', closeQuotePreview);
+                if (printQuoteBtn) printQuoteBtn.addEventListener('click', printQuote);
+                if (quoteAddClientBtn) quoteAddClientBtn.addEventListener('click', () => {
+                    // Open client modal, maybe store current quote state? For now, just open it.
+                    openClientModal();
+                    // Ideally, after saving the client, it should re-populate the select and maybe select the new one.
+                });
+
+                 // Add listeners to mark quote form dirty on input changes
+                if (quoteClientSelect) quoteClientSelect.addEventListener('change', markQuoteFormDirty);
+                if (quoteDateInput) quoteDateInput.addEventListener('change', markQuoteFormDirty);
+                if (quoteStatusSelect) quoteStatusSelect.addEventListener('change', markQuoteFormDirty);
+                if (quoteTermsInput) quoteTermsInput.addEventListener('input', markQuoteFormDirty);
+                if (quoteNotesInput) quoteNotesInput.addEventListener('input', markQuoteFormDirty);
+
+
+                // Event delegation for quotes table buttons
+                if (quotesTableBody) quotesTableBody.addEventListener('click', (e) => {
+                    if (e.target && e.target.classList.contains('view-quote-btn')) {
+                        const quoteId = e.target.dataset.id;
+                        loadQuoteIntoForm(quoteId);
+                    } else if (e.target && e.target.classList.contains('duplicate-quote-btn')) {
+                        const quoteId = e.target.dataset.id;
+                        loadQuoteIntoForm(quoteId, true); // Load as duplicate
+                    } else if (e.target && e.target.classList.contains('delete-quote-btn')) {
+                        const quoteId = e.target.dataset.id;
+                        deleteQuote(quoteId);
+                    }
+                });
+
+                if (settingsForm) settingsForm.addEventListener('submit', saveSettings);
+                if (settingsLogoInput) settingsLogoInput.addEventListener('change', handleLogoUpload);
+                if (removeLogoBtn) removeLogoBtn.addEventListener('click', removeLogo);
+
+                if (exportDataBtn) exportDataBtn.addEventListener('click', exportData);
+                if (importFileInput) importFileInput.addEventListener('change', importData);
+
+                // Handle browser back/forward navigation using hash
+                window.addEventListener('hashchange', handleHashChange);
+
+                // --- Initialization ---
+                const initialize = () => {
+                    console.log('Initializing App...');
+                    loadData(); // Load data from localStorage
+                    loadSettings(); // Populate settings form
+                    renderClientsTable(); // Render initial client list
+                    renderQuotesTable(); // Render initial quote list
+                    populateClientSelect(); // Populate client dropdown in quote form
+                    resetQuoteForm(); // Set up the quote form initially
+                    handleHashChange(); // Set initial page based on hash or default
+                    startAutoBackup(); // Start the auto-backup timer
+                    console.log('App Initialized.');
+                };
+
+                initialize(); // Run initialization on load
+
+            } catch (error) { // Catch errors during the initial setup
+                 console.error("Critical error during app initialization:", error);
+                 alert("A critical error occurred while starting the app. Some features might not work. Please check the browser console (F12) for details.");
+                 // Optionally display an error message on the page itself
+                 const body = document.querySelector('body');
+                 if (body) {
+                     const errorDiv = document.createElement('div');
+                     errorDiv.textContent = `Initialization Error: ${error.message}. Please check console (F12).`;
+                     errorDiv.style.color = 'red';
+                     errorDiv.style.backgroundColor = 'lightyellow';
+                     errorDiv.style.border = '1px solid red';
+                     errorDiv.style.padding = '10px';
+                     errorDiv.style.margin = '10px';
+                     errorDiv.style.position = 'fixed';
+                     errorDiv.style.top = '10px';
+                     errorDiv.style.left = '10px';
+                     errorDiv.style.zIndex = '9999';
+                     body.prepend(errorDiv);
+                 }
+            }
+        });
+    </script>
+</body>
+</html>

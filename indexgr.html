@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ServicePro App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f4f4f4;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 200px;
+            background: #333;
+            color: white;
+            padding: 20px;
+        }
+        .sidebar button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: #555;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+        .sidebar button:hover {
+            background: #777;
+        }
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .tab {
+            display: none;
+        }
+        .tab.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #eee;
+        }
+        input, textarea, select, button {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #333;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #555;
+        }
+        .quote-preview {
+            background: white;
+            padding: 20px;
+            border: 1px solid #ddd;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        .print-view {
+            display: none;
+        }
+        @media print {
+            .sidebar, .content > *:not(.print-view) {
+                display: none;
+            }
+            .print-view {
+                display: block;
+            }
+        }
+        @media (max-width: 600px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .content {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <button onclick="showTab('clients')">Clients</button>
+            <button onclick="showTab('quotes')">Quotes</button>
+            <button onclick="showTab('new-quote')">New Quote</button>
+            <button onclick="showTab('settings')">Settings</button>
+        </div>
+        <div class="content">
+            <!-- Clients Tab -->
+            <div id="clients" class="tab">
+                <h2>Clients</h2>
+                <input type="text" id="client-search" placeholder="Search clients..." oninput="filterClients()">
+                <button onclick="showClientForm()">Add Client</button>
+                <table id="client-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>Address</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="client-list"></tbody>
+                </table>
+                <div id="client-form" style="display: none;">
+                    <h3 id="client-form-title">Add Client</h3>
+                    <input type="hidden" id="client-id">
+                    <input type="text" id="client-name" placeholder="Name" required>
+                    <input type="text" id="client-phone" placeholder="Phone">
+                    <input type="email" id="client-email" placeholder="Email">
+                    <textarea id="client-address" placeholder="Address"></textarea>
+                    <textarea id="client-notes" placeholder="Notes"></textarea>
+                    <button onclick="saveClient()">Save</button>
+                    <button onclick="hideClientForm()">Cancel</button>
+                </div>
+                <div id="client-details" style="display: none;">
+                    <h3 id="client-details-name"></h3>
+                    <p><strong>Phone:</strong> <span id="client-details-phone"></span></p>
+                    <p><strong>Email:</strong> <span id="client-details-email"></span></p>
+                    <p><strong>Address:</strong> <span id="client-details-address"></span></p>
+                    <p><strong>Notes:</strong> <span id="client-details-notes"></span></p>
+                    <h4>Service History</h4>
+                    <table id="client-history">
+                        <thead>
+                            <tr>
+                                <th>Quote #</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Total</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="client-history-list"></tbody>
+                    </table>
+                    <button onclick="hideClientDetails()">Back</button>
+                </div>
+            </div>
+            <!-- Quotes Tab -->
+            <div id="quotes" class="tab">
+                <h2>Quotes</h2>
+                <input type="text" id="quote-search" placeholder="Search quotes..." oninput="filterQuotes()">
+                <table id="quote-table">
+                    <thead>
+                        <tr>
+                            <th>Quote #</th>
+                            <th>Date</th>
+                            <th>Client</th>
+                            <th>Status</th>
+                            <th>Total</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quote-list"></tbody>
+                </table>
+            </div>
+            <!-- New Quote Tab -->
+            <div id="new-quote" class="tab">
+                <h2>New Quote</h2>
+                <input type="hidden" id="quote-id">
+                <select id="quote-client" onchange="fillClientInfo()">
+                    <option value="">Select Client</option>
+                </select>
+                <input type="text" id="quote-client-name" placeholder="Client Name">
+                <input type="text" id="quote-client-phone" placeholder="Client Phone">
+                <input type="email" id="quote-client-email" placeholder="Client Email">
+                <textarea id="quote-client-address" placeholder="Client Address"></textarea>
+                <h3>Services/Items</h3>
+                <table id="quote-items">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Total</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quote-items-list"></tbody>
+                </table>
+                <button onclick="addQuoteItem()">Add Item</button>
+                <p>Subtotal: $<span id="quote-subtotal">0.00</span></p>
+                <p>Tax (<span id="quote-tax-rate">0</span>%): $<span id="quote-tax">0.00</span></p>
+                <p>Total: $<span id="quote-total">0.00</span></p>
+                <textarea id="quote-terms" placeholder="Terms and Notes"></textarea>
+                <select id="quote-status">
+                    <option value="Draft">Draft</option>
+                    <option value="Sent">Sent</option>
+                    <option value="Accepted">Accepted</option>
+                    <option value="Rejected">Rejected</option>
+                </select>
+                <button onclick="saveQuote()">Save Quote</button>
+                <button onclick="previewQuote()">Preview & Print</button>
+                <div id="quote-preview" class="quote-preview print-view"></div>
+            </div>
+            <!-- Settings Tab -->
+            <div id="settings" class="tab">
+                <h2>Settings</h2>
+                <h3>Business Information</h3>
+                <input type="text" id="business-name" placeholder="Business Name">
+                <input type="text" id="business-phone" placeholder="Business Phone">
+                <input type="email" id="business-email" placeholder="Business Email">
+                <textarea id="business-address" placeholder="Business Address"></textarea>
+                <h3>Logo</h3>
+                <input type="file" id="business-logo" accept="image/*">
+                <img id="logo-preview" style="max-width: 200px; display: none;">
+                <h3>Quote Settings</h3>
+                <input type="text" id="quote-prefix" placeholder="Quote Prefix (e.g., Q-)" maxlength="5">
+                <input type="number" id="quote-start" placeholder="Starting Quote Number" min="1">
+                <input type="number" id="tax-rate" placeholder="Tax Rate (%)" step="0.01" min="0">
+                <h3>Backup</h3>
+                <button onclick="exportData()">Export Data</button>
+                <input type="file" id="import-file" accept=".json">
+                <button onclick="importData()">Import Data</button>
+                <h3>Auto-Backup</h3>
+                <input type="number" id="backup-interval" placeholder="Backup every X minutes" min="1">
+                <button onclick="saveSettings()">Save Settings</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Data Storage
+        let db;
+        const request = indexedDB.open('ServiceProDB', 1);
+        request.onupgradeneeded = (event) => {
+            db = event.target.result;
+            db.createObjectStore('clients', { keyPath: 'id' });
+            db.createObjectStore('quotes', { keyPath: 'id' });
+            db.createObjectStore('settings', { keyPath: 'key' });
+        };
+        request.onsuccess = (event) => {
+            db = event.target.result;
+            loadData();
+            startAutoBackup();
+        };
+
+        let clients = [];
+        let quotes = [];
+        let settings = {
+            businessName: '',
+            businessPhone: '',
+            businessEmail: '',
+            businessAddress: '',
+            logo: '',
+            quotePrefix: 'Q-',
+            quoteStart: 1,
+            taxRate: 0,
+            backupInterval: 5
+        };
+
+        function loadData() {
+            loadClients();
+            loadQuotes();
+            loadSettings();
+        }
+
+        function loadClients() {
+            const tx = db.transaction(['clients'], 'readonly');
+            const store = tx.objectStore('clients');
+            const request = store.getAll();
+            request.onsuccess = () => {
+                clients = request.result;
+                renderClients();
+                updateClientDropdown();
+            };
+        }
+
+        function loadQuotes() {
+            const tx = db.transaction(['quotes'], 'readonly');
+            const store = tx.objectStore('quotes');
+            const request = store.getAll();
+            request.onsuccess = () => {
+                quotes = request.result;
+                renderQuotes();
+            };
+        }
+
+        function loadSettings() {
+            const tx = db.transaction(['settings'], 'readonly');
+            const store = tx.objectStore('settings');
+            const keys = ['businessName', 'businessPhone', 'businessEmail', 'businessAddress', 'logo', 'quotePrefix', 'quoteStart', 'taxRate', 'backupInterval'];
+            keys.forEach(key => {
+                const request = store.get(key);
+                request.onsuccess = () => {
+                    if (request.result) {
+                        settings[key] = request.result.value;
+                        updateSettingsUI();
+                    }
+                };
+            });
+        }
+
+        // UI Navigation
+        function showTab(tabId) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            if (tabId === 'new-quote') resetQuoteForm();
+        }
+
+        // Clients
+        function showClientForm(client = null) {
+            document.getElementById('client-form').style.display = 'block';
+            document.getElementById('client-table').style.display = 'none';
+            document.getElementById('client-search').style.display = 'none';
+            document.getElementById('client-form-title').textContent = client ? 'Edit Client' : 'Add Client';
+            if (client) {
+                document.getElementById('client-id').value = client.id;
+                document.getElementById('client-name').value = client.name;
+                document.getElementById('client-phone').value = client.phone;
+                document.getElementById('client-email').value = client.email;
+                document.getElementById('client-address').value = client.address;
+                document.getElementById('client-notes').value = client.notes;
+            } else {
+                document.getElementById('client-form').reset();
+            }
+        }
+
+        function hideClientForm() {
+            document.getElementById('client-form').style.display = 'none';
+            document.getElementById('client-table').style.display = 'table';
+            document.getElementById('client-search').style.display = 'block';
+        }
+
+        function saveClient() {
+            const client = {
+                id: document.getElementById('client-id').value || Date.now().toString(),
+                name: document.getElementById('client-name').value,
+                phone: document.getElementById('client-phone').value,
+                email: document.getElementById('client-email').value,
+                address: document.getElementById('client-address').value,
+                notes: document.getElementById('client-notes').value
+            };
+            const tx = db.transaction(['clients'], 'readwrite');
+            tx.objectStore('clients').put(client);
+            tx.oncomplete = () => {
+                loadClients();
+                hideClientForm();
+            };
+        }
+
+        function deleteClient(id) {
+            if (confirm('Are you sure you want to delete this client?')) {
+                const tx = db.transaction(['clients'], 'readwrite');
+                tx.objectStore('clients').delete(id);
+                tx.oncomplete = () => loadClients();
+            }
+        }
+
+        function showClientDetails(id) {
+            const client = clients.find(c => c.id === id);
+            if (!client) return;
+            document.getElementById('client-table').style.display = 'none';
+            document.getElementById('client-search').style.display = 'none';
+            document.getElementById('client-form').style.display = 'none';
+            document.getElementById('client-details').style.display = 'block';
+            document.getElementById('client-details-name').textContent = client.name;
+            document.getElementById('client-details-phone').textContent = client.phone;
+            document.getElementById('client-details-email').textContent = client.email;
+            document.getElementById('client-details-address').textContent = client.address;
+            document.getElementById('client-details-notes').textContent = client.notes;
+            const historyList = document.getElementById('client-history-list');
+            historyList.innerHTML = '';
+            quotes.filter(q => q.clientId === id).forEach(quote => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${quote.quoteNumber}</td>
+                    <td>${quote.date}</td>
+                    <td>${quote.status}</td>
+                    <td>$${quote.total.toFixed(2)}</td>
+                    <td><button onclick="editQuote('${quote.id}')">View/Edit</button></td>
+                `;
+                historyList.appendChild(row);
+            });
+        }
+
+        function hideClientDetails() {
+            document.getElementById('client-details').style.display = 'none';
+            document.getElementById('client-table').style.display = 'table';
+            document.getElementById('client-search').style.display = 'block';
+        }
+
+        function renderClients(filter = '') {
+            const list = document.getElementById('client-list');
+            list.innerHTML = '';
+            clients.filter(c => c.name.toLowerCase().includes(filter.toLowerCase())).forEach(client => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${client.name}</td>
+                    <td>${client.phone}</td>
+                    <td>${client.email}</td>
+                    <td>${client.address}</td>
+                    <td>
+                        <button onclick="showClientDetails('${client.id}')">View</button>
+                        <button onclick="showClientForm(clients.find(c => c.id === '${client.id}'))">Edit</button>
+                        <button onclick="deleteClient('${client.id}')">Delete</button>
+                    </td>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        function filterClients() {
+            const search = document.getElementById('client-search').value;
+            renderClients(search);
+        }
+
+        // Quotes
+        function updateClientDropdown() {
+            const dropdown = document.getElementById('quote-client');
+            dropdown.innerHTML = '<option value="">Select Client</option>';
+            clients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id;
+                option.textContent = client.name;
+                dropdown.appendChild(option);
+            });
+        }
+
+        function fillClientInfo() {
+            const clientId = document.getElementById('quote-client').value;
+            const client = clients.find(c => c.id === clientId);
+            if (client) {
+                document.getElementById('quote-client-name').value = client.name;
+                document.getElementById('quote-client-phone').value = client.phone;
+                document.getElementById('quote-client-email').value = client.email;
+                document.getElementById('quote-client-address').value = client.address;
+            } else {
+                document.getElementById('quote-client-name').value = '';
+                document.getElementById('quote-client-phone').value = '';
+                document.getElementById('quote-client-email').value = '';
+                document.getElementById('quote-client-address').value = '';
+            }
+        }
+
+        let quoteItems = [];
+        function addQuoteItem(item = { description: '', quantity: 1, unitPrice: 0 }) {
+            quoteItems.push(item);
+            renderQuoteItems();
+            updateQuoteTotals();
+        }
+
+        function removeQuoteItem(index) {
+            quoteItems.splice(index, 1);
+            renderQuoteItems();
+            updateQuoteTotals();
+        }
+
+        function renderQuoteItems() {
+            const list = document.getElementById('quote-items-list');
+            list.innerHTML = '';
+            quoteItems.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><input type="text" value="${item.description}" oninput="quoteItems[${index}].description = this.value; updateQuoteTotals()"></td>
+                    <td><input type="number" value="${item.quantity}" min="1" oninput="quoteItems[${index}].quantity = parseInt(this.value); updateQuoteTotals()"></td>
+                    <td><input type="number" value="${item.unitPrice}" step="0.01" min="0" oninput="quoteItems[${index}].unitPrice = parseFloat(this.value); updateQuoteTotals()"></td>
+                    <td>$${(item.quantity * item.unitPrice).toFixed(2)}</td>
+                    <td><button onclick="removeQuoteItem(${index})">Remove</button></td>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        function updateQuoteTotals() {
+            const subtotal = quoteItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+            const tax = subtotal * (settings.taxRate / 100);
+            const total = subtotal + tax;
+            document.getElementById('quote-subtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('quote-tax-rate').textContent = settings.taxRate;
+            document.getElementById('quote-tax').textContent = tax.toFixed(2);
+            document.getElementById('quote-total').textContent = total.toFixed(2);
+        }
+
+        function resetQuoteForm() {
+            quoteItems = [];
+            document.getElementById('quote-id').value = '';
+            document.getElementById('quote-client').value = '';
+            fillClientInfo();
+            renderQuoteItems();
+            updateQuoteTotals();
+            document.getElementById('quote-terms').value = '';
+            document.getElementById('quote-status').value = 'Draft';
+            document.getElementById('quote-preview').innerHTML = '';
+        }
+
+        function saveQuote() {
+            const quote = {
+                id: document.getElementById('quote-id').value || Date.now().toString(),
+                clientId: document.getElementById('quote-client').value,
+                clientName: document.getElementById('quote-client-name').value,
+                clientPhone: document.getElementById('quote-client-phone').value,
+                clientEmail: document.getElementById('quote-client-email').value,
+                clientAddress: document.getElementById('quote-client-address').value,
+                items: quoteItems,
+                subtotal: parseFloat(document.getElementById('quote-subtotal').textContent),
+                tax: parseFloat(document.getElementById('quote-tax').textContent),
+                total: parseFloat(document.getElementById('quote-total').textContent),
+                terms: document.getElementById('quote-terms').value,
+                status: document.getElementById('quote-status').value,
+                date: new Date().toISOString().split('T')[0],
+                quoteNumber: generateQuoteNumber()
+            };
+            const tx = db.transaction(['quotes'], 'readwrite');
+            tx.objectStore('quotes').put(quote);
+            tx.oncomplete = () => {
+                loadQuotes();
+                showTab('quotes');
+            };
+        }
+
+        function generateQuoteNumber() {
+            const existingNumbers = quotes.map(q => parseInt(q.quoteNumber.replace(settings.quotePrefix, ''))).filter(n => !isNaN(n));
+            const nextNumber = Math.max(settings.quoteStart, ...existingNumbers) + 1;
+            return settings.quotePrefix + nextNumber;
+        }
+
+        function editQuote(id) {
+            const quote = quotes.find(q => q.id === id);
+            if (!quote) return;
+            showTab('new-quote');
+            document.getElementById('quote-id').value = quote.id;
+            document.getElementById('quote-client').value = quote.clientId || '';
+            document.getElementById('quote-client-name').value = quote.clientName;
+            document.getElementById('quote-client-phone').value = quote.clientPhone;
+            document.getElementById('quote-client-email').value = quote.clientEmail;
+            document.getElementById('quote-client-address').value = quote.clientAddress;
+            quoteItems = quote.items;
+            renderQuoteItems();
+            updateQuoteTotals();
+            document.getElementById('quote-terms').value = quote.terms;
+            document.getElementById('quote-status').value = quote.status;
+        }
+
+        function duplicateQuote(id) {
+            const quote = quotes.find(q => q.id === id);
+            if (!quote) return;
+            showTab('new-quote');
+            document.getElementById('quote-id').value = '';
+            document.getElementById('quote-client').value = quote.clientId || '';
+            document.getElementById('quote-client-name').value = quote.clientName;
+            document.getElementById('quote-client-phone').value = quote.clientPhone;
+            document.getElementById('quote-client-email').value = quote.clientEmail;
+            document.getElementById('quote-client-address').value = quote.clientAddress;
+            quoteItems = quote.items.map(item => ({ ...item }));
+            renderQuoteItems();
+            updateQuoteTotals();
+            document.getElementById('quote-terms').value = quote.terms;
+            document.getElementById('quote-status').value = 'Draft';
+        }
+
+        function deleteQuote(id) {
+            if (confirm('Are you sure you want to delete this quote?')) {
+                const tx = db.transaction(['quotes'], 'readwrite');
+                tx.objectStore('quotes').delete(id);
+                tx.oncomplete = () => loadQuotes();
+            }
+        }
+
+        function renderQuotes(filter = '') {
+            const list = document.getElementById('quote-list');
+            list.innerHTML = '';
+            quotes.filter(q => q.quoteNumber.toLowerCase().includes(filter.toLowerCase()) || q.clientName.toLowerCase().includes(filter.toLowerCase())).forEach(quote => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${quote.quoteNumber}</td>
+                    <td>${quote.date}</td>
+                    <td>${quote.clientName}</td>
+                    <td>${quote.status}</td>
+                    <td>$${quote.total.toFixed(2)}</td>
+                    <td>
+                        <button onclick="editQuote('${quote.id}')">Edit</button>
+                        <button onclick="duplicateQuote('${quote.id}')">Duplicate</button>
+                        <button onclick="deleteQuote('${quote.id}')">Delete</button>
+                        <button onclick="previewQuote('${quote.id}')">Preview</button>
+                    </td>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        function filterQuotes() {
+            const search = document.getElementById('quote-search').value;
+            renderQuotes(search);
+        }
+
+        function previewQuote(id = null) {
+            let quote;
+            if (id) {
+                quote = quotes.find(q => q.id === id);
+            } else {
+                quote = {
+                    clientName: document.getElementById('quote-client-name').value,
+                    clientPhone: document.getElementById('quote-client-phone').value,
+                    clientEmail: document.getElementById('quote-client-email').value,
+                    clientAddress: document.getElementById('quote-client-address').value,
+                    items: quoteItems,
+                    subtotal: parseFloat(document.getElementById('quote-subtotal').textContent),
+                    tax: parseFloat(document.getElementById('quote-tax').textContent),
+                    total: parseFloat(document.getElementById('quote-total').textContent),
+                    terms: document.getElementById('quote-terms').value,
+                    status: document.getElementById('quote-status').value,
+                    date: new Date().toISOString().split('T')[0],
+                    quoteNumber: id ? quotes.find(q => q.id === id).quoteNumber : generateQuoteNumber()
+                };
+            }
+            const preview = document.getElementById('quote-preview');
+            preview.innerHTML = `
+                <div style="text-align: center;">
+                    ${settings.logo ? `<img src="${settings.logo}" style="max-width: 200px;">` : ''}
+                    <h2>${settings.businessName}</h2>
+                    <p>${settings.businessAddress}</p>
+                    <p>${settings.businessPhone} | ${settings.businessEmail}</p>
+                </div>
+                <h3>Quote #${quote.quoteNumber}</h3>
+                <p>Date: ${quote.date}</p>
+                <p><strong>To:</strong><br>
+                   ${quote.clientName}<br>
+                   ${quote.clientAddress}<br>
+                   ${quote.clientPhone}<br>
+                   ${quote.clientEmail}</p>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #eee;">
+                            <th style="border: 1px solid #ddd; padding: 8px;">Description</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">Quantity</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">Unit Price</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${quote.items.map(item => `
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${item.description}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${item.quantity}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">$${item.unitPrice.toFixed(2)}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">$${(item.quantity * item.unitPrice).toFixed(2)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <p style="text-align: right;">Subtotal: $${quote.subtotal.toFixed(2)}</p>
+                <p style="text-align: right;">Tax (${settings.taxRate}%): $${quote.tax.toFixed(2)}</p>
+                <p style="text-align: right;"><strong>Total: $${quote.total.toFixed(2)}</strong></p>
+                <p><strong>Terms & Notes:</strong><br>${quote.terms.replace(/\n/g, '<br>')}</p>
+            `;
+            if (!id) window.print();
+        }
+
+        // Settings
+        function updateSettingsUI() {
+            document.getElementById('business-name').value = settings.businessName;
+            document.getElementById('business-phone').value = settings.businessPhone;
+            document.getElementById('business-email').value = settings.businessEmail;
+            document.getElementById('business-address').value = settings.businessAddress;
+            document.getElementById('quote-prefix').value = settings.quotePrefix;
+            document.getElementById('quote-start').value = settings.quoteStart;
+            document.getElementById('tax-rate').value = settings.taxRate;
+            document.getElementById('backup-interval').value = settings.backupInterval;
+            if (settings.logo) {
+                document.getElementById('logo-preview').src = settings.logo;
+                document.getElementById('logo-preview').style.display = 'block';
+            }
+        }
+
+        function saveSettings() {
+            settings.businessName = document.getElementById('business-name').value;
+            settings.businessPhone = document.getElementById('business-phone').value;
+            settings.businessEmail = document.getElementById('business-email').value;
+            settings.businessAddress = document.getElementById('business-address').value;
+            settings.quotePrefix = document.getElementById('quote-prefix').value;
+            settings.quoteStart = parseInt(document.getElementById('quote-start').value) || 1;
+            settings.taxRate = parseFloat(document.getElementById('tax-rate').value) || 0;
+            settings.backupInterval = parseInt(document.getElementById('backup-interval').value) || 5;
+            const tx = db.transaction(['settings'], 'readwrite');
+            const store = tx.objectStore('settings');
+            Object.entries(settings).forEach(([key, value]) => {
+                if (key !== 'logo' || value) store.put({ key, value });
+            });
+            tx.oncomplete = () => alert('Settings saved!');
+        }
+
+        document.getElementById('business-logo').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    settings.logo = reader.result;
+                    document.getElementById('logo-preview').src = settings.logo;
+                    document.getElementById('logo-preview').style.display = 'block';
+                    const tx = db.transaction(['settings'], 'readwrite');
+                    tx.objectStore('settings').put({ key: 'logo', value: settings.logo });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Backup
+        function exportData() {
+            const data = { clients, quotes, settings };
+            const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'servicepro_backup.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData() {
+            const file = document.getElementById('import-file').files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                const data = JSON.parse(reader.result);
+                const tx = db.transaction(['clients', 'quotes', 'settings'], 'readwrite');
+                tx.objectStore('clients').clear();
+                data.clients.forEach(client => tx.objectStore('clients').put(client));
+                tx.objectStore('quotes').clear();
+                data.quotes.forEach(quote => tx.objectStore('quotes').put(quote));
+                tx.objectStore('settings').clear();
+                Object.entries(data.settings).forEach(([key, value]) => {
+                    if (value) tx.objectStore('settings').put({ key, value });
+                });
+                tx.oncomplete = () => {
+                    clients = data.clients;
+                    quotes = data.quotes;
+                    settings = { ...settings, ...data.settings };
+                    renderClients();
+                    renderQuotes();
+                    updateClientDropdown();
+                    updateSettingsUI();
+                    alert('Data imported successfully!');
+                };
+            };
+            reader.readAsText(file);
+        }
+
+        function autoBackup() {
+            localStorage.setItem('servicepro_autobackup', JSON.stringify({ clients, quotes, settings }));
+        }
+
+        function restoreAutoBackup() {
+            const backup = localStorage.getItem('servicepro_autobackup');
+            if (backup) {
+                const data = JSON.parse(backup);
+                const tx = db.transaction(['clients', 'quotes', 'settings'], 'readwrite');
+                tx.objectStore('clients').clear();
+                data.clients.forEach(client => tx.objectStore('clients').put(client));
+                tx.objectStore('quotes').clear();
+                data.quotes.forEach(quote => tx.objectStore('quotes').put(quote));
+                tx.objectStore('settings').clear();
+                Object.entries(data.settings).forEach(([key, value]) => {
+                    if (value) tx.objectStore('settings').put({ key, value });
+                });
+                tx.oncomplete = () => {
+                    clients = data.clients;
+                    quotes = data.quotes;
+                    settings = { ...settings, ...data.settings };
+                    renderClients();
+                    renderQuotes();
+                    updateClientDropdown();
+                    updateSettingsUI();
+                };
+            }
+        }
+
+        function startAutoBackup() {
+            setInterval(() => {
+                if (settings.backupInterval > 0) autoBackup();
+            }, settings.backupInterval * 60 * 1000);
+        }
+
+        // Initialize
+        showTab('clients');
+        restoreAutoBackup();
+    </script>
+</body>
+</html>
